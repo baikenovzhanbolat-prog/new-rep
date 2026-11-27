@@ -15,7 +15,7 @@ const F31 = (() => {
     { sh: 6, x0: -12.83, z0: -27.49, x1: 30.11, z1: 1.98 }
   ];
   const inFrame = (x, z) => FR.some(f => x >= f.x0 && x <= f.x1 && z >= f.z0 && z <= f.z1 && !(f.cut && x >= f.cut[0] && x <= f.cut[2] && z >= f.cut[1] && z <= f.cut[3]));
-  const log = { built: 0, miss: [], clash: [], hgt: [], skipCond: 0, keepCond: 0, span: [], hall: 0, hallFix: 0, hallAdd: 0, ins: { n: 0, L: {} }, pipes: 0, noSupInFrame: [], items: [] };
+  const log = { built: 0, miss: [], clash: [], hgt: [], skipCond: 0, keepCond: 0, span: [], hall: 0, hallFix: 0, hallAdd: 1 /* ОП20 у Н-3 — в данных PHX_DATA.sup с v0.43 */, ins: { n: 0, L: {} }, pipes: 0, noSupInFrame: [], items: [] };
   const covered = new Map();   // труба → [дуговые координаты опор по листам]
   const condAt = new Map();    // труба → [дуговые координаты условных опор]
   const NAME = { dtl: 'ДТ(Л)', dtz: 'ДТ(З)', b: 'Б', d: 'Д', gu: 'Гу', lzb: 'ДТ/Б', heat: 'Т', pv: 'В2', prp: 'В10' };
@@ -210,14 +210,6 @@ const F31 = (() => {
   }
 
   /* ---------- цех 200: марки опор по 200-ТХ-002-0 ---------- */
-  function patchSup(D, PH) {   // знак ОП20 на перемычке Ø57 у Н-3 (z 21,88) — в АК-041 знака нет
-    for (const [m, x, z, ax] of HALL) {
-      if (D.sup.some(s => Math.hypot(s[0] - x, s[1] - z) < 0.4)) continue;
-      const p = PH.pipes.find(q => ax === 'x' ? Math.abs(q[1] - z) < 0.03 && Math.abs(q[3] - z) < 0.03 && Math.min(q[0], q[2]) - 0.02 <= x && x <= Math.max(q[0], q[2]) + 0.02
-        : Math.abs(q[0] - x) < 0.03 && Math.abs(q[2] - x) < 0.03 && Math.min(q[1], q[3]) - 0.02 <= z && z <= Math.max(q[1], q[3]) + 0.02);
-      if (p) { D.sup.push([x, z, ax, p[4] / 2]); log.hallAdd++; }
-    }
-  }
   function hallMark(x, z) {
     let best = null, bd = 0.4;
     for (const h of HALL) { const d = Math.hypot(h[1] - x, h[2] - z); if (d < bd) { bd = d; best = h; } }
@@ -257,7 +249,7 @@ const F31 = (() => {
     park: () => flyTo([-27.0, 8.5, -16.0], [-33.0, 0.5, -6.0], 0.9),
     hall: () => { if (typeof ROOF200 !== 'undefined' && ROOF200) ROOF200.visible = false; flyTo([-66.0, 4.6, 31.8], [-63.0, -0.7, 26.2], 0.9); }
   };
-  return { OUT, HALL, FR, inFrame, log, applyIns, skipCond, addCond, build, spans, patchSup, hallSup, hallMark, VIEWS, covered };
+  return { OUT, HALL, FR, inFrame, log, applyIns, skipCond, addCond, build, spans, hallSup, hallMark, VIEWS, covered };
 })();
 
 /* v0.43: теги отметок и Ø труб цеха 200 (F29, v0.29–v0.30) и трасса ДТ(Л) по 152-ТК-007-0 (F25) внесены в data/ */
