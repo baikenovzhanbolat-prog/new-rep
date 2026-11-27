@@ -8,33 +8,7 @@
    6) дренажные отводы, конец которых лежит на продуктовой трубе: врезка дренажа с задвижкой (задвижка — условно);
    7) обвязка УСН-N1: общий участок к отводам N1/N3 был отнесён к ДТ(Л) — отвод ДТ(З) N3 не соединялся (АК-045). */
 const F32 = (() => {
-  const log = { nets: [], ug: 0, rgs: 0, b3: 0, gu: 0, drains: [], estq: 0 };
-  /* --- NETS: восполнение по ГП-005 и узел Гу --- */
-  function patchNets(N) {
-    const d = N.d || (N.d = []), gu = N.gu || [], b = N.b || (N.b = []);
-    const has = (arr, x0, z0, x1, z1) => arr.some(s => (Math.hypot(s[0] - x0, s[1] - z0) < 0.05 && Math.hypot(s[2] - x1, s[3] - z1) < 0.05) || (Math.hypot(s[0] - x1, s[1] - z1) < 0.05 && Math.hypot(s[2] - x0, s[3] - z0) < 0.05));
-    // (4) дренаж цеха: ГП-005 — x −50,04 от z 20,78 до 22,88, далее на восток до −48,13 (продолжение — существующая Д-008)
-    for (const s of [[-50.04, 20.78, -50.04, 22.88, 0], [-50.04, 22.88, -48.13, 22.88, 0]]) if (!has(d, ...s.slice(0, 4))) { d.push(s); log.nets.push('Д ' + s.slice(0, 4).join(' ')); }
-    // (2) РГС-116.3: отводы бензина от линий z −0,643 (выдача) и −0,441 (приём) до задвижек (как у 116.4) — условно
-    for (const s of [[-26.26, -0.643, -26.26, 0.225, 0], [-25.86, -0.441, -25.86, 0.225, 0]]) if (!has(b, ...s.slice(0, 4))) { b.push(s); log.b3++; }
-    // (3) Гу: соединение на коллекторе z −2,152 в точке x −34,09 — делим обе линии в точке узла
-    const X = -34.09, Z = -2.15;
-    const cut = (arr, test, at) => { for (let i = 0; i < arr.length; i++) { const s = arr[i]; if (!test(s)) continue; const a = s.slice(0, 2), q = s.slice(2, 4); arr.splice(i, 1, [a[0], a[1], at[0], at[1], s[4]], [at[0], at[1], q[0], q[1], s[4]]); log.gu++; return; } };
-    cut(gu, s => Math.abs(s[0] - X) < 0.02 && Math.abs(s[2] - X) < 0.02 && Math.min(s[1], s[3]) < Z - 0.05 && Math.max(s[1], s[3]) > Z + 0.05, [X, Z]);
-    cut(gu, s => Math.abs(s[1] - Z) < 0.02 && Math.abs(s[3] - Z) < 0.02 && Math.min(s[0], s[2]) < X - 0.05 && Math.max(s[0], s[2]) > X + 0.05, [X, Z]);
-  }
-  /* --- (5) подземные обрывки условного знака ГП-005 (ДТ(Л), ≈1,2 м) --- */
-  function patchUG(UG) {
-    // (5б) Д x −58,35 (z 6,68–18,76): дубль линии ДТ(Л) к 186 в слое дренажа (на ТК-005 здесь три линии в футлярах 273×7, L = 12 м; дренажа нет)
-    const D = UG.nets && UG.nets.d;
-    if (D) for (let i = D.length - 1; i >= 0; i--) { const p = D[i]; if (p.length === 5 && Math.abs(p[1] + 58.35) < 0.02 && Math.abs(p[3] + 58.35) < 0.02 && Math.abs(p[2] - 6.68) < 0.05 && Math.abs(p[4] - 18.76) < 0.05) { D.splice(i, 1); log.ug++; log.ugD = 1; } }
-    const L = UG.nets && UG.nets.dtl; if (!L) return;
-    for (let i = L.length - 1; i >= 0; i--) {
-      const p = L[i]; let len = 0, inBox = true;
-      for (let j = 1; j + 1 < p.length; j += 2) { const x = p[j], z = p[j + 1]; if (!(x > -38.4 && x < -35.7 && z > 9.7 && z < 11.8)) inBox = false; if (j > 1) len += Math.hypot(x - p[j - 2], z - p[j - 1]); }
-      if (inBox && len < 2.0) { L.splice(i, 1); log.ug++; }
-    }
-  }
+  const log = PATCH_LOG.F32;   // правки (2)–(5) в NETS и UG_DATA — в данных с v0.43; rgs, drains, estq заполняются ниже
   /* --- (1) РГС: участок «задвижка → патрубок» в сеть (строит его модуль RGSD) --- */
   function regRGS(t, side, loc, valve, gy) {
     if (!loc || !loc.pts || !valve) return;
@@ -86,6 +60,6 @@ const F32 = (() => {
       log.drains.push([s.pipe ? s.pipe.id : '', t.pipe ? t.pipe.id : '']);
     }
   }
-  return { log, patchNets, patchUG, regRGS, drainTap, buildDrains, applyOD };
+  return { log, regRGS, drainTap, buildDrains, applyOD };
 })();
-F28.patchNets(NETS); F32.patchNets(NETS); F34.patchNets(NETS); F28.patchPH(PH);
+/* v0.43: правки NETS (F28, F32, F34) и PH (F28) внесены в data/ */

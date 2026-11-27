@@ -504,41 +504,12 @@ const F25 = (() => {
     // ввод в котельную (разрез 6-6)
     reg(Object.assign({}, base, { pts: [[TK.xW, tkY.yC, z], [TK.xW, TK.yIn, z], [TK.xIn, TK.yIn, z]], name: 'ДТ(Л) Ø57×3 — ввод в котельную 501 на +1,590 (разрез 6-6)', eqEnd: 'Котельная 501: ввод ДТ(Л) (+1,590)', o: Object.assign({}, o, { id: 'Ввод 501', note: '152-ТК-007-0, разрез 6-6: подъём у стены котельной до +1,590 (низ тр. 300,04) и ввод в здание. Положение стены — по ГП-003.' }) }));
   }
-  /* --- NETS: трасса ГП-005 заменяется по ТК-007 (до построения слоёв сети) --- */
-  const removed = [];
-  function patchNets(N) {
-    const L = N.dtl, z = TK.z, on = s => Math.abs(s[1] - z) < 0.02 && Math.abs(s[3] - z) < 0.02;
-    const out = [];
-    for (const s of L) {
-      const x0 = Math.min(s[0], s[2]), x1 = Math.max(s[0], s[2]);
-      if (on(s) && x0 >= TK.x89 - 1.6 && x1 <= TK.x92 + 0.4) {   // участки у перехода
-        if (x1 <= TK.x89 + 1e-6 || x0 >= TK.x92 - 1e-6) { out.push(s); continue; }
-        removed.push(s.slice());
-        if (x0 < TK.x89) out.push([x0, z, TK.x89, z, 0]);
-        if (x1 > TK.x92) out.push([TK.x92, z, x1, z, 0]);
-        continue;
-      }
-      if (s[4] && x0 > 57.2 && x1 < 60.3 && Math.min(s[1], s[3]) > -19.95 && Math.max(s[1], s[3]) < -16.9) { removed.push(s.slice()); continue; }   // контуры фасонных деталей узла 14 (ГП-005)
-      if (on(s) && Math.abs(x1 - 62.82) < 0.02 && x0 < TK.xW) { removed.push(s.slice()); out.push([x0, z, TK.xW, z, 0]); continue; }   // ввод в котельную
-      out.push(s);
-    }
-    N.dtl = out;
+  /* --- отметки узлов трассы ДТ(Л) по ТК-007 (трасса ГП-005 заменена по ТК-007 в данных NETS с v0.43) --- */
+  function initTk(N) {
+    const z = TK.z;
     tkY = { yA: nodeY(TK.x89, z), yB: nodeY(TK.x92, z), y14a: yLine(57.87, z, N), y14b: yLine(59.78, z, N), yC: nodeY(TK.xW, z), yb1: yLine(57.35, -19.41, N), yb2: yLine(57.35, -17.50, N) };
   }
   const tkOld = new THREE.Group(); tkOld.name = 'ДТ(Л): прежний переход ГП-005'; tkOld.visible = false; scene.add(tkOld);
-  /* --- UG_DATA (подземные трассы ГП-005, модуль UGN): переход под дорогой и контуры узла 14 заменяются по ТК-007 --- */
-  const removedUG = [];
-  function patchUG(U) {
-    const L = U.nets.dtl || [], out = [];
-    for (const a of L) {
-      const pts = []; for (let i = 1; i < a.length; i += 2) pts.push([a[i], a[i + 1]]);
-      const crossing = pts.every(p => Math.abs(p[1] - TK.z) < 0.02 && p[0] > TK.x89 - 0.1 && p[0] < TK.x92 + 0.1);
-      const node14 = pts.every(p => p[0] > 57.2 && p[0] < 60.3 && p[1] > -19.95 && p[1] < -16.9);
-      if (crossing || node14) { removedUG.push(a.slice()); continue; }
-      out.push(a);
-    }
-    U.nets.dtl = out;
-  }
   /* --- 3D опор и арматуры по ТК-007 --- */
   const tkG = new THREE.Group(); tkG.name = 'F25: опоры и арматура ТК-007'; scene.add(tkG);
   function ballValve(b, c, ax, open, dn = 50) {   // кран шаровой с рукояткой (поз. 8 / 10)
@@ -598,32 +569,6 @@ const F25 = (() => {
   }
   function yV2(zz) { return yLine(57.35, zz); }
 
-  /* =========================== 7. ГРАФ ТП: положение узлов станции 186 по ТХ-002 (топология не меняется) =========================== */
-  function patchProc(PR) {
-    const N = PR.nodes, E = Object.fromEntries(PR.edges.map(e => [e.id, e])), Vv = PR.valves, z = Y => +sz(Y).toFixed(3), x = X => +sx(X).toFixed(3);
-    const yW = h => +(H186 + h).toFixed(3);
-    const set = (id, pts) => { if (E[id]) E[id].pts = pts; };
-    for (const [k, X] of [['Б', 2.22], ['З', 2.76], ['Л', 3.30]]) {
-      const v = '186-' + k, eId = Vv[v] && Vv[v].e; if (!eId) continue;
-      set(eId, [[x(X), z(9.27)], [x(X), z(9.27)]]); Vv[v].p = [x(X), z(9.27)]; Vv[v].src = 'ТХ-186';
-      Vv[v].note = (Vv[v].note || '') + ' 3D (v0.25): задвижка клиновая Ду100 (ЗКЛ2-100-16, 30с41нж, поз. 3) по 186-ТХ-002-0; за ней — обратный клапан КОП 100-16 (поз. 6).';
-      if (N['A' + k + '1']) N['A' + k + '1'].p = [x(X), z(8.45)];
-    }
-    if (N.AJ) N.AJ.p = [x(3.30), z(7.75)];
-    set('e117', [[x(2.22), z(8.45)], [x(2.22), z(7.75)], [x(3.30), z(7.75)]]);
-    set('e114', [[x(2.76), z(8.45)], [x(2.76), z(7.75)], [x(3.30), z(7.75)]]);
-    set('e111', [[x(3.30), z(8.45)], [x(3.30), z(7.75)]]);
-    if (N.AK) N.AK.p = [x(3.30), z(5.21)];
-    set('e118', [[x(3.30), z(7.75)], [x(3.30), z(5.21)]]);
-    set('e119', [[x(3.30), z(4.36)], [x(3.30), z(4.36)]]); if (Vv['КО-1']) { Vv['КО-1'].p = [x(3.30), z(4.36)]; Vv['КО-1'].note += ' 3D (v0.25): на входе в колонну АСН-80-02.01 (в составе поставки устройства; на 186-ТХ-002-0 отдельно не показан — положение условно).'; }
-    if (N.AKo) N.AKo.p = [x(3.30), z(4.20)];
-    const J = POSE_W.J, Eh = ASN.hatch;
-    set('e120', [[x(3.30), z(4.20)], [x(3.30), z(4.10), yW(ASN.hA)], [x(J[0]), z(J[1]), yW(ASN.hA)], [x(Eh[0]), z(Eh[1]), yW(ASN.hA)], [x(Eh[0]), z(Eh[1]), yW(ASN.hCovW + 0.05)]]);
-    if (N.ASN) { N.ASN.p = [x(Eh[0]), z(Eh[1])]; N.ASN.y = yW(ASN.hCovW + 0.05); }
-    if (N.Gasn) { N.Gasn.p = [x(3.71), z(4.10)]; N.Gasn.y = yW(3.384); }
-    set('e212', [[-52.6, -9.78], [x(9.05), z(0.28), yW(5.054)], [x(3.71), z(0.28), yW(5.054)], [x(3.71), z(0.28), yW(3.384)], [x(3.71), z(4.10), yW(3.384)]]);
-    if (E.e212) E.e212.src = 'ТХ-186';
-  }
 
   /* =========================== 8. АНИМАЦИЯ, КАРТОЧКИ =========================== */
   let tPrev = 0, cardFor = null, cardT = 0, msg = '';
@@ -682,8 +627,8 @@ const F25 = (() => {
     station186Pipes(); tkPipes(); tkBuild();
     FAST_LOD.push(...lod);
   }
-  const api = { station, late, tick, patchNets, patchProc, cardHTML, bindCard, VIEWS, kin, ASN, POSE_W, POSE_G, TK, tkY, H186, H186t, sx, sz, oldG, tkOld, tkG, pipeG, removed, REC, ok186, truck, stems,
-    patchUG, removedUG, own, speed: 1, dbg: () => ({ L: procLogic, S: procSim, PROC }) /* для проверки модели ТП */, setPose: v => { kin.manual = v ? 1 : 0; },
+  const api = { station, late, tick, initTk, cardHTML, bindCard, VIEWS, kin, ASN, POSE_W, POSE_G, TK, tkY, H186, H186t, sx, sz, oldG, tkOld, tkG, pipeG, REC, ok186, truck, stems,
+    own, speed: 1, dbg: () => ({ L: procLogic, S: procSim, PROC }) /* для проверки модели ТП */, setPose: v => { kin.manual = v ? 1 : 0; },
     get state() { return { H186t, pose: kin.pose, hc: kin.hc, mp: kin.mp, fill: kin.fill, a1: kin.a1, a2: kin.a2, ok186, tkY, H186, yTop: TK.yTop }; } };
   window.__F25 = api;
   return api;

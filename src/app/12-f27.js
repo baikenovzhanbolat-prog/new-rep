@@ -306,30 +306,6 @@ const F27 = (() => {
     return st;
   }
 
-  /* =========================== 7. ГРАФ ТП: геометрия узлов и рёбер по физическим трубам (топология без изменений) =========================== */
-  function patchProc(PR) {
-    const N = PR.nodes, E = Object.fromEntries(PR.edges.map(e => [e.id, e])), Vv = PR.valves;
-    const p2 = (u, v) => [+sx(u).toFixed(3), +sz(v).toFixed(3)], p3 = (u, v, h) => [+sx(u).toFixed(3), +sz(v).toFixed(3), +(Y0 + h).toFixed(3)];
-    const set = (id, pts) => { if (E[id]) { E[id].pts = pts; E[id].src = E[id].src === 'усл' ? 'ТХ-166' : E[id].src; } };
-    const L = [['L', 'e121', 'TL0', 'TL1', 'e124', U_VA], ['Z', 'e122', 'TZ0', 'TZ1', 'e126', U_VB], ['B', 'e123', 'TB0', 'TB1', 'e128', U_VA]];
-    for (const [k, ePipe, n0, n1, eV, uV] of L) {
-      const v = LN[k], vid = '166-' + { L: 'Л', Z: 'З', B: 'Б' }[k];
-      if (N[n0]) N[n0].p = p2(U_BND, v);
-      if (E[ePipe]) { const q = E[ePipe].pts; q[q.length - 1] = p2(U_BND, v); }
-      set(eV, [p2(uV, v), p2(uV, v)]);
-      if (Vv[vid]) { Vv[vid].p = p2(uV, v); Vv[vid].src = 'ТХ-166'; Vv[vid].typ = 'КШ'; Vv[vid].n = 'Кран шаровый Ду50 на линии ' + { L: 'ДТ(Л)', Z: 'ДТ(З)', B: 'бензина' }[k] + ' к ТРК-1 (поз. 2)';
-        Vv[vid].note = 'Кран шаровый фланцевый Ду50 Ру1,6 ФБ39.010.50 (10с19п1), ЗАО «Фобос» — 166-ТХ.С-001-0 поз. 2; место — по плану 166-ТХ-002-0' + (k === 'L' ? '; в утеплённом кожухе (166-ТХ.ВТ)' : '') + '. До v0.27 — «задвижка» (АК-004). Поток контролируется FA166-01/02/03.'; }
-      if (N[n1]) N[n1].p = p2(uV - 0.2, v);
-    }
-    const tj = [TRKc[0], TRKc[1]];
-    if (N.TJ) { N.TJ.p = p2(tj[0], tj[1]); N.TJ.y = +(Y0 + HT_IN).toFixed(3); N.TJ.noSnap = 1; }   // условный узел слияния (АК-004) внутри цоколя ТРК: к трубам не привязывается — «Сверка» P30
-    const dTail = [p3(U_RL, LN.L, H45), p3(U_IN, LN.L, H45), p3(U_IN, LN.L, HB_IN), p3(L5.D.u, LN.L, HB_IN), p3(L5.D.u, L5.D.vB, HB_IN), p3(L5.D.u, L5.D.vB, H32), p3(L5.D.u, L5.D.vT, H32), p3(tj[0], tj[1], HT_IN)];
-    set('e125', [p3(U_VA - 0.2, LN.L, H57), p3(U_TEE, LN.L, H57), ...dTail]);
-    set('e127', [p3(U_VB - 0.2, LN.Z, H57), p3(U_TEE, LN.Z, H57), p3(U_TEE, LN.L, H57), ...dTail]);
-    set('e129', [p3(U_VA - 0.2, LN.B, H57), p3(U_RB, LN.B, H57), p3(U_IN, LN.B, H45), p3(U_IN, LN.B, HB_IN), p3(L5.B.u, LN.B, HB_IN), p3(L5.B.u, L5.B.vB, HB_IN), p3(L5.B.u, L5.B.vB, H32), p3(L5.B.u, L5.B.vT, H32), p3(tj[0], tj[1], HT_IN)]);
-    if (N.TRK) { N.TRK.p = p2(tj[0], tj[1]); N.TRK.y = +(Y0 + 1.15).toFixed(3); N.TRK.n = 'ТРК-1 («Нара 4000», мод. С222) — пункт заправки 166'; }
-    set('e130', [p3(tj[0], tj[1], HT_IN), p3(tj[0], tj[1], 1.15)]);
-  }
   function ind(I) { for (const [k, v] of Object.entries(IND)) I[k] = v; }
 
   /* =========================== 8. АНИМАЦИЯ, КАРТОЧКИ, ВИДЫ =========================== */
@@ -379,7 +355,7 @@ const F27 = (() => {
     okNets = pipes();
     try { const r = procLogic.pRing && procLogic.pRing['ТРК-1']; if (r) { r.position.set(sx(TRKc[0]), Y0 + 2.0, sz(TRKc[1])); r.scale.setScalar(0.55); } } catch (e) { console.warn('F27: кольцо насоса ТРК-1', e); }
   }
-  const api = { build, late, tick, patchProc, ind, cardHTML, bindCard, VIEWS, oldG, pipeG, REC, levers, disp, sx, sz, Y0, TRKc, LN, speed: 1,
+  const api = { build, late, tick, ind, cardHTML, bindCard, VIEWS, oldG, pipeG, REC, levers, disp, sx, sz, Y0, TRKc, LN, speed: 1,
     scr: (u, v, h) => { const p = P3(u, v, h).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },   // экранная точка (для проверок)
     U: { VA: U_VA, VB: U_VB }, H57,
     get state() { return { okNets, Y0, run: flowing(), L: disp.L, B: disp.Bn, lev: levers.map(l => [l.vid, +l.k.toFixed(2)]) }; } };

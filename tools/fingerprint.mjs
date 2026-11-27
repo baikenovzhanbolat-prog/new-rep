@@ -74,24 +74,40 @@ const snap = () => page.evaluate(() => {
       inst: o.isInstancedMesh ? o.count + ':' + h(o.instanceMatrix.array.subarray(0, o.count * 16)) : '',
     };
   });
-  const seen = new WeakSet(), objSet = new Set(G.OBJ);
-  const rep = function (k, v) {
-    const raw = k === '' ? v : this[k];   // исходное значение (до toJSON у объектов Three.js)
-    if (raw && typeof raw === 'object' && (raw.isObject3D || raw.isMaterial || raw.isBufferGeometry || raw.isTexture)) return '[THREE]';
-    if (v && typeof v === 'object') {
-      if (v.isObject3D || v.isMaterial || v.isBufferGeometry || v.isTexture || v instanceof Node) return '[THREE]';
+  /* сериализация: числа округлены; объекты Three.js, DOM, функции — опущены; ссылки на OBJ — по номеру;
+     свойства, повешенные на массивы (p.el, p.dead …), — выписываются; настоящие циклы — «[цикл]»;
+     разделяемые ссылки (один объект в нескольких местах) выписываются полностью и перечисляются в shares */
+  const objSet = new Set(G.OBJ);
+  const skip = v => v.isObject3D || v.isMaterial || v.isBufferGeometry || v.isTexture || v instanceof Node;
+  function ser(root) {
+    const anc = new Set(), first = new Map(), shares = [];
+    const go = (v, path) => {
+      if (typeof v === 'number') return Math.round(v * 1e6) / 1e6;
+      if (v === null || typeof v !== 'object') return typeof v === 'function' ? undefined : v;
+      if (skip(v)) return '[THREE]';
       if (ArrayBuffer.isView(v)) return 'TA ' + h(v);
-      if (objSet.has(v)) return '[OBJ ' + v.id + ']';   // ссылки на объекты генплана — по номеру
-      if (seen.has(v)) return '[цикл]';
-      seen.add(v);
-    }
-    if (typeof v === 'function') return undefined;
-    if (typeof v === 'number') return Math.round(v * 1e6) / 1e6;
-    return v;
-  };
-  const js = o => { try { return String(JSON.stringify(o, rep)); } catch (e) { return 'ERR ' + e.message; } };
+      if (objSet.has(v) && path !== '') return '[OBJ ' + v.id + ']';
+      if (anc.has(v)) return '[цикл]';
+      if (first.has(v)) shares.push(path + ' = ' + first.get(v)); else first.set(v, path);
+      anc.add(v);
+      let out;
+      if (Array.isArray(v)) {
+        out = v.map((x, i) => { const r = go(x, path + '[' + i + ']'); return r === undefined ? null : r; });
+        const ex = Object.keys(v).filter(q => !/^\d+$/.test(q));
+        if (ex.length) out = { '@arr': out, '@props': Object.fromEntries(ex.map(q => [q, go(v[q], path + '.' + q)])) };
+      } else {
+        out = {};
+        for (const k of Object.keys(v)) { const r = go(v[k], path + '.' + k); if (r !== undefined) out[k] = r; }
+      }
+      anc.delete(v);
+      return out;
+    };
+    const val = go(root, '');
+    return [String(JSON.stringify(val)), shares];
+  }
+  const js = o => { try { return ser(o)[0]; } catch (e) { return 'ERR ' + e.message; } };
   const data = {};
-  for (const [k, v] of Object.entries(G.data)) data[k] = js(v);
+  for (const [k, v] of Object.entries(G.data)) { const [t, sh] = ser(v); data[k] = t; data['shares.' + k] = String(sh.length) + (sh.length ? ': ' + sh.slice(0, 40).join('; ') : ''); }
   data.PIPEREG = js(G.PIPEREG);
   data.OBJ = js(G.OBJ.map(o => ({ ...o })));   // поверхностные копии: вложенные ссылки на объекты — по номеру
   for (const [k, v] of Object.entries(G.logs)) data['log.' + k] = js(v && v.log);

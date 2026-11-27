@@ -7,6 +7,7 @@ const PARK = [[2913, 3225], [2913, 2700], [3007, 2606], [3780, 2606], [3780, 301
 
 /* ---------- Рельеф по проектным отметкам листа ГП-003 (H0 = 297,30 → y = 0) + покрытия ---------- */
 const PH = /*@json data/04-terrain-relief.PH.json*/null;
+for (const p of PH.pipes) if (p.length && p[p.length - 1] && typeof p[p.length - 1] === 'object') Object.assign(p, p.pop());   // теги трубы (el, wo, …) — последним элементом в данных
 let TERR = null;
 const H0 = 297.30;
 const PH_F0 = 297.40 - 297.30, PH_F1 = 296.40 - 297.30, PH_PIPE_Y = 0.55;   // ±0.000 = 297,40; пол насосного зала −1,000; оси труб — как у наружных сетей
