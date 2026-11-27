@@ -124,6 +124,6 @@ function hAtS(x, z) { const h = hAt(x, z), m = RELIEF17.moundAt(x, z); return m 
     }
     for (let j = 0; j < F.nz - 1; j++) for (let i = 0; i < F.nx - 1; i++) { const a = i + F.nx * j, b = i + F.nx * (j + 1), c = i + 1 + F.nx * (j + 1), d = i + 1 + F.nx * j; idx.push(a, b, d, b, c, d); }
     const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.BufferAttribute(p, 3)); g2.setAttribute('uv', new THREE.BufferAttribute(q, 2)); g2.setIndex(idx); g2.computeVertexNormals();
-    const det = new THREE.Mesh(g2, terrMat); det.receiveShadow = true; det.userData.noWalk = 1; det.name = 'рельеф: детальная полоса 0,5 м (v0.17)'; terr.add(det);
+    const det = new THREE.Mesh(g2, terrMat); det.receiveShadow = true; det.userData.noWalk = 1; det.name = 'рельеф: детальная полоса 0,5 м'; terr.add(det);
   }
 }

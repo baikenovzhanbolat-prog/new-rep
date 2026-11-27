@@ -95,8 +95,8 @@ const GEO = (() => {
     #gpp label.sw{display:flex;gap:6px;align-items:center;margin:6px 0;cursor:pointer}`;
   document.head.appendChild(css);
   const panel = document.createElement('div'); panel.id = 'gpp';
-  panel.innerHTML = `<div class="ph"><b>Генеральный план</b><span>5632.29-ГП, листы 1–5 · v0.17</span><button class="lbtn" id="gpX">✕</button></div>
-    <div class="tabs"><button data-t="pass" class="on">Паспорт</button><button data-t="pav">Покрытия</button><button data-t="earth">Земля</button><button data-t="geo">Привязка</button><button data-t="aud">Сверка</button></div><div id="gpBody"></div>`;
+  panel.innerHTML = `<div class="ph"><b>Генеральный план</b><span>5632.29-ГП, листы 1–5 ·</span><button class="lbtn" id="gpX">✕</button></div>
+ <div class="tabs"><button data-t="pass" class="on">Паспорт</button><button data-t="pav">Покрытия</button><button data-t="earth">Земля</button><button data-t="geo">Привязка</button><button data-t="aud">Сверка</button></div><div id="gpBody"></div>`;
   document.body.appendChild(panel);
   const body = panel.querySelector('#gpBody'), bG = document.getElementById('bGP');
   let tab = 'pass', lastPt = null;
@@ -150,7 +150,7 @@ const GEO = (() => {
       h += `<h5>Роза ветров (ГП-002)</h5>${rose()}<div class="mut" style="text-align:center"><span style="color:#c0392b">■</span> июнь &nbsp; <span style="color:#1d4e7a">■</span> январь. Лучи сняты с чертежа в относительных единицах (повторяемость в % на листе не подписана) ${tag('P')}</div>`;
     } else {
       const a = D.aud;
-      h += `<div class="mut">Сверка модели с листами ГП-002…004. v0.17: отметки путей, площадки эстакады и рельеф (пп. «Ж/д пути…», «Обсыпка…», «Полоса…») исправлены по решению заказчика; масштаб сцены принят без пересчёта координат.</div>`;
+      h += `<div class="mut">Сверка модели с листами ГП-002…004. Отметки путей, площадки эстакады и рельеф (пп. «Ж/д пути…», «Обсыпка…», «Полоса…») исправлены по решению заказчика; масштаб сцены принят без пересчёта координат.</div>`;
       h += a.map(f => `<div class="fx ${f[0] === 'X' ? '' : f[0] === 'V' || f[0] === 'A' ? 'ok' : 'q'}"><b>${f[1]}</b> ${tag(f[0])}<br>${f[2]}${f[3] ? `<br><span class="mut">${f[3]}</span>` : ''}${f[4] ? ` <span class="lk" data-fly="${f[4].join(',')}">показать</span>` : ''}</div>`).join('');
       h += `<h5>Рельеф модели и узлы ГП-004 (расчёт по текущей модели)</h5><div>${audStat()}</div><div class="mut">${D.audStat}</div>`;
       h += cpTable();
@@ -172,7 +172,7 @@ const GEO = (() => {
   function cpTable() {
     const L = RELIEF17.cps, rows = L.map(c => { const m = H0g + hAtS(c.x, c.z), d = m - c.H; return [c, m, d]; });
     const okN = rows.filter(r => Math.abs(r[2]) <= 0.10).length;
-    return `<h5>Контрольные точки рельефа v0.17</h5><div>${L.length} точек (ГП-003: отметки и горизонтали; ГП-004: узлы; принятые — между подписанными точками). В пределах ±0,10 м — ${okN}; остальные — у подпорных стенок и откосов, где сетка рельефа 0,5/2,5 м не передаёт уступ (стенка показана отдельно).</div>` +
+    return `<h5>Контрольные точки рельефа</h5><div>${L.length} точек (ГП-003: отметки и горизонтали; ГП-004: узлы; принятые — между подписанными точками). В пределах ±0,10 м — ${okN}; остальные — у подпорных стенок и откосов, где сетка рельефа 0,5/2,5 м не передаёт уступ (стенка показана отдельно).</div>` +
       `<details><summary class="lk">таблица</summary><table><tr><th>Точка</th><th>Источник</th><th class="r">Лист</th><th class="r">Модель</th><th class="r">Δ</th><th></th></tr>` +
       rows.map(([c, m, d]) => `<tr><td>${c.lbl}${c.note ? `<br><span class="mut">${c.note}</span>` : ''}</td><td>${c.src} ${tag(c.st)}</td><td class="r">${fmk(c.H)}</td><td class="r">${fmt(m)}</td><td class="r">${d >= 0 ? '+' : '−'}${fmt(Math.abs(d))}</td><td><span class="lk" data-fly="${c.x},${c.z}">показать</span></td></tr>`).join('') + '</table></details>';
   }

@@ -237,7 +237,7 @@ const RGSP = (() => {
       ${s ? row('Количество (модель)', `<span id="rgMass">${f(s.v.vol, 1)} м³ · ${f(s.v.vol * p.density, 1)} т</span>`, 'SIM', 'масса = объём модели × плотность ОЛ') : ''}
       ${row('Насос перекачки', p.pump + ' (цех 200)', 'MODEL', 'граф ТП: маршруты ' + (p.key === 'Z' ? 'М2' : 'М3') + ', М5, М6; ТХ-001: Н-7, Н-8')}
       ${row('Трубопроводы', p.lines, 'MODEL', 'ГП-005')}
-      ${row('Контроль загазованности', p.qe + ' (ДАТ-М, площадка РГС)', 'MODEL', 'АК-004; модуль ПАЗ v0.19')}
+      ${row('Контроль загазованности', p.qe + ' (ДАТ-М, площадка РГС)', 'MODEL', 'АК-004; модуль ПАЗ')}
       ${row('Цвет в модели', `<span style="display:inline-block;width:28px;height:10px;border-radius:3px;background:${p.color};border:1px solid #b8a35a;vertical-align:middle"></span>`, 'APPROX', 'условное обозначение продукта')}</table>`;
   }
   function rDoc() {
@@ -248,8 +248,8 @@ const RGSP = (() => {
       <tr><td>Файл</td><td class="v">${D.FILE.name}<div class="src">${D.FILE.pages} стр., ${D.FILE.size}</div></td></tr>
       <tr><td>Для этого резервуара</td><td class="v">${me.type}: ${me.code}<div class="src">стр. ${me.page} · поз. ${me.pos}</div></td></tr></table>` +
       Object.entries(D.DOCS).map(([k, d]) => docRow(k, d)).join('') +
-      `<div class="leg">«Просмотр» — страница, встроенная в приложение (работает без интернета, в т. ч. на телефоне). «Открыть PDF» — исходный PDF стр. 1–2, встроенный в HTML (браузер ПК откроет нужную страницу; Android сохранит файл). «Полный файл» — ${D.FILE.pkg} рядом с HTML (папка пакета v0.20).</div>
-      <h5>Указания листа ТХ-001</h5><ol style="margin:3px 0 0 18px;padding:0;font-size:11.5px">${D.NOTES.map(n => `<li>${n}</li>`).join('')}</ol><div class="leg">Пункты 3–8 в PDF выходят за рамку листа — приведены по читаемой части ${badge('CONFIRMED')}</div>`;
+      `<div class="leg">«Просмотр» — страница, встроенная в приложение (работает без интернета, в т. ч. на телефоне). «Открыть PDF» — исходный PDF стр. 1–2, встроенный в HTML (браузер ПК откроет нужную страницу; Android сохранит файл). «Полный файл» — ${D.FILE.pkg} рядом с HTML (папка пакета).</div>
+ <h5>Указания листа ТХ-001</h5><ol style="margin:3px 0 0 18px;padding:0;font-size:11.5px">${D.NOTES.map(n => `<li>${n}</li>`).join('')}</ol><div class="leg">Пункты 3–8 в PDF выходят за рамку листа — приведены по читаемой части ${badge('CONFIRMED')}</div>`;
   }
   const R_ = { ov: rOv, pas: rPas, eq: rEq, noz: rNoz, prod: rProd, doc: rDoc };
   function render() {
@@ -395,7 +395,7 @@ const RGSP = (() => {
   function cardHTML(o) {
     if (!isPair(o)) { const rgsValve = o && o.proc && o.proc.k === 'valve' && /^РГС-/.test(o.proc.id); if (panel.style.display === 'flex' && !rgsValve) hidePanel(false); return ''; }
     const ks = RGSD.tanks.filter(t => t.o === o).map(t => RGSD.ID_OF[t.k]).sort();
-    return `<div class="pn"><div class="pnh"><b>Технические паспорта РГС-75</b> (v0.20, «Резервуар 1.pdf»)</div><div class="pnb">` +
+    return `<div class="pn"><div class="pnh"><b>Технические паспорта РГС-75</b> («Резервуар 1.pdf»)</div><div class="pnb">` +
       ks.map(id => { const q = D.tank(id); return `<button class="pbtn" data-rgsp="${id}">РГС-${id} · ${q.product.short}</button>`; }).join('') +
       `</div><div class="pnn">Номера — по графу ТП (ГП-005); подпись пары «${o.id}» на генплане — требует подтверждения.</div></div>`;
   }

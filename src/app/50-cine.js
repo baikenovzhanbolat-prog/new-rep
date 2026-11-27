@@ -1426,7 +1426,7 @@ const CINE = (() => {
     e.preventDefault(); e.stopImmediatePropagation();
   };
   addEventListener('keydown', onKey, true);
-  const btn = document.createElement('button'); btn.className = 'btn'; btn.id = 'bCine'; btn.textContent = 'Кино'; btn.title = 'Кинорежим: фильмы 9:16 для Instagram — «Экшн · 62 с» и «Обзор · 58 с» (v0.42)'; btn.onclick = enter;
+  const btn = document.createElement('button'); btn.className = 'btn'; btn.id = 'bCine'; btn.textContent = 'Кино'; btn.title = 'Кинорежим: фильмы 9:16 для Instagram — «Экшн · 62 с» и «Обзор · 58 с»'; btn.onclick = enter;
   { const top = document.getElementById('top'); if (top) top.appendChild(btn); }
 
   /* ---------- 21. Проверка траектории (разработка): просвет камеры по лучам ---------- */

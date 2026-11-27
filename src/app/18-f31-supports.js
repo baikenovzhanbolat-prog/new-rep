@@ -193,7 +193,7 @@ const F31 = (() => {
       st: new THREE.MeshStandardMaterial({ color: 0x6f767d, roughness: 0.55, metalness: 0.5, name: 'Опоры — сталь окрашенная (условно)' }),
       cn: new THREE.MeshStandardMaterial({ color: 0xa8a49b, roughness: 0.9, metalness: 0, name: 'Фундаменты опор — бетон (условно)' })
     };
-    const g = new THREE.Group(); g.name = 'Опоры трубопроводов по 152-ТК-005/006 (v0.31)'; parent.add(g);
+    const g = new THREE.Group(); g.name = 'Опоры трубопроводов по 152-ТК-005/006'; parent.add(g);
     const ms = acc.build(g, mats, { pgeo: 1, f31: 1 });
     for (const m of ms) { ctx.pickables.push(m); ctx.newMeshes && ctx.newMeshes.push(m); }
     log.pipes = covered.size;
@@ -229,7 +229,7 @@ const F31 = (() => {
         id: drain ? 'ОП (Д)' : m === '—' ? 'ОП' : m, net: 1, f31: 1,
         name: drain ? 'Опора дренажного трубопровода (поз. 69)' : `Опора ${m === '—' ? 'трубопровода' : m} — ${fixed ? 'неподвижная' : 'подвижная'}`,
         note: `Место и марка — 200-ТХ-002-0 (план цеха 200, знаки опор; совпадают со знаками АК-041)${mk.endsWith('*') ? '; марка на листе не подписана — принята по соседним опорам ряда' : ''}${m === '—' ? '; марка на листе не подписана' : ''}. ` +
-          `Труба Ø${Math.round(r * 2000)}, отметка — по 200-ТХ-003-0 (v0.29). ` + (fixed ? 'Неподвижная: башмак с упорами. ' : '') +
+          `Труба Ø${Math.round(r * 2000)}, отметка — по 200-ТХ-003-0. ` + (fixed ? 'Неподвижная: башмак с упорами. ' : '') +
           'Тип и конструкция — по 200-ТХ.С (лист с позициями опор не предоставлен): сечение стойки, ложемента и хомута — условно.'
       };
       const y = yAt(x, z), yt = y - r - 0.005, dx = ax ? 1 : 0, dz = ax ? 0 : 1;

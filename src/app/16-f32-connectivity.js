@@ -41,7 +41,7 @@ const F32 = (() => {
   }
   function buildDrains(parent, pickables, yOn, segPt) {
     if (!drainEnds.size) return;
-    const g = new THREE.Group(); g.name = 'v0.32: задвижки дренажных врезок (условно)'; parent.add(g);
+    const g = new THREE.Group(); g.name = 'Задвижки дренажных врезок (условно)'; parent.add(g);
     const mB = new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.6, metalness: 0.4 }), mW = new THREE.MeshStandardMaterial({ color: 0xb02a20, roughness: 0.5, metalness: 0.3 });
     const seen = new Set();
     for (const { n, s, t } of [...drainEnds.values()].reverse()) {   // последний проход — актуальные сегменты

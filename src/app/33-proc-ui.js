@@ -247,7 +247,7 @@ function procCardHTML(o) {
   if (pid) {
     const p = L.PU[pid], run = L.st.pump[pid], lk = L.pumpLinks(pid), nm = k => L.N[k].n.split(' (')[0];
     return `<div class="n"><b>${p.n}</b>: ${p.model}; Q = ${p.Q}${typeof p.Q === 'number' ? ' м³/ч' : ''}; H = ${p.H}${typeof p.H === 'number' ? ' м' : ''}; N = ${p.N} кВт. Управление: ${p.ctrl}. Давление на напоре (Рном / Рmax, МПа): ${p.P}${p.pis !== '—' ? ' — ' + p.pis : ''}.</div>` +
-      `<div class="n">Назначение: ${p.duty}</div><div class="n">Блокировки (АК-004, реализация — этап 2–3): ${p.lock}</div>` +
+      `<div class="n">Назначение: ${p.duty}</div><div class="n">Блокировки (АК-004): ${p.lock}</div>` +
       (p.warn ? `<div class="n" style="color:#b02a2a">${p.warn}</div>` : '') + (o.proc || o.id === pid ? '' : `<div class="n">В 3D-модели (по АК-041) насос подписан «${o.id}»; в АК-004 — «${pid}».</div>`) +
       `<div class="n">Связь сейчас: всас — ${lk.suc.length ? lk.suc.map(nm).join(', ') : 'нет'}; нагнетание — ${lk.dis.length ? lk.dis.map(nm).join(', ') : 'нет'}.</div>` +
       `<div class="pst ${run ? 'on' : 'off'}">Состояние (модель): <b>${run ? 'В РАБОТЕ' : 'ОСТАНОВЛЕН'}</b></div>` +
@@ -306,7 +306,7 @@ function prRenderDet() {
   const run = L.st.pump[prSel.pump];
   let h = `<div class="rh"><b>${r.id}</b> ${r.n} <i class="pd" style="background:#${(PROD[prod] || PROD.LZB).c.toString(16).padStart(6, '0')}"></i><span style="font-size:11px;color:#5b6b78">${(PROD[prod] || PROD.LZB).n}</span><button class="lbtn" id="prClr" style="margin-left:auto">снять выбор</button></div>` +
     `<div class="rs"><label>Источник ${sel('prS', srcs, prSel.src, prNodeName)}</label><label>Приёмник ${sel('prD', dsts, prSel.dst, prNodeName)}</label><label>Насос ${sel('prP', pumps, prSel.pump, k => k)}</label></div>` +
-    `<div class="rst ${ev.lvl}">${ev.text.replace(' Движение продукта будет показано на этапе 2.', '')}${(ev.warn || []).map(w => '<br>⚠ ' + w).join('')}</div>` +
+    `<div class="rst ${ev.lvl}">${ev.text}${(ev.warn || []).map(w => '<br>⚠ ' + w).join('')}</div>` +
     `<div id="prLive"></div><div id="prPass"></div>` +
     `<label class="dose">Задание на перекачку, м³ <input id="prDose" type="number" min="0" step="0.5" placeholder="без ограничения" value="${prSel.dose || ''}"></label>` +
     `<div class="pbar"><button class="pbtn grn" id="prAsm">Собрать маршрут</button><button class="pbtn ${run ? 'red' : 'grn'}" id="prRun">${run ? 'Стоп' : 'Пуск'} ${prSel.pump}</button>` +
@@ -315,7 +315,7 @@ function prRenderDet() {
     h += '<div class="oc">Арматура маршрута (по потоку)</div>';
     for (const v of ev.need) { const on = L.st.valve[v]; h += `<div class="vr" data-v="${v}"><i class="dot ${on ? 'on' : 'off'}"></i><span><b>${v}</b> ${L.V[v].n}${window.__HYDX ? window.__HYDX.vtag(v) : ''}</span>${procBtn('valve', v, on ? 'Закр.' : 'Откр.', 'sm ' + (on ? 'red' : 'grn'))}</div>`; }
   }
-  h += `<div class="rn">${r.note}</div><div class="rn">Модель: связность маршрута — по положению арматуры, направлению насосов и обратных клапанов; подача — рабочая точка насоса на сети (гидравлический расчёт v0.35 по физическим трубам; модельные данные, допущения — вкладка «Модель»); арматура открывается и закрывается за время хода, пуск — после полного открытия маршрута; поток и маршрут показаны по физическим трубам модели сети (v0.18), скорость — по внутреннему диаметру участка; уровни и объёмы — модельные (задаются на вкладке «Ёмкости»); блокировки по уровням — по АК-004. Пожар и загазованность — этап 3.</div>`;
+  h += `<div class="rn">${r.note}</div><div class="rn">Модель: связность маршрута — по положению арматуры, направлению насосов и обратных клапанов; подача — рабочая точка насоса на сети (гидравлический расчёт по физическим трубам; модельные данные, допущения — вкладка «Модель»); арматура открывается и закрывается за время хода, пуск — после полного открытия маршрута; поток и маршрут показаны по физическим трубам модели сети, скорость — по внутреннему диаметру участка; уровни и объёмы — модельные (задаются на вкладке «Ёмкости»); блокировки по уровням — по АК-004. Пожар и загазованность — вкладка «ПАЗ».</div>`;
   prDet.innerHTML = h;
   procDrawPath(ev.ideal, ev.lvl, prod);
   if (window.__PFLOW) try { window.__PFLOW.renderPass(document.getElementById('prPass'), ev.ideal, prSel.pump); } catch (e) { console.error('PFLOW: паспорт', e); }

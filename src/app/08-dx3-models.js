@@ -120,7 +120,7 @@ const DX3 = (() => {
     function build(g0, o) {
       const g = new THREE.Group(); g.position.y = Y; g0.add(g);
       // прежнее здание (FAC v0.10) строится в отдельную группу; рампа из неё переносится в основную
-      const go = new THREE.Group(); go.name = '196: прежнее закрытое здание (до v0.21)';
+      const go = new THREE.Group(); go.name = '196: прежнее закрытое здание';
       FAC.B['196'](go);
       for (const ch of go.children.slice(0, 2)) g.add(ch);
       g.add(go); old.push(go);

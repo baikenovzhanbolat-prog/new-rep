@@ -176,7 +176,7 @@ const TCAR = (() => {
       for (const [src, dst] of [[b, B], [s, S], [f, F]]) for (const [g, c] of src.parts) dst.add(g.applyMatrix4(T), c);
     }
     const mB = B.mesh(GK.MAT.dirty), mS = S.mesh(GK.MAT.steel), mF = F.mesh(GK.MAT.paint);
-    mB.name = 'Вагоны-цистерны (v0.22)'; mS.name = 'Вагоны-цистерны: колёсные пары'; mF.name = 'Вагоны-цистерны: мелкие детали (LOD)';
+    mB.name = 'Вагоны-цистерны'; mS.name = 'Вагоны-цистерны: колёсные пары'; mF.name = 'Вагоны-цистерны: мелкие детали (LOD)';
     for (const m of [mB, mS, mF]) { if (o) m.userData.o = o; parent.add(m); }
     const gL = lidGeo();
     xs.forEach(cx => { const me = new THREE.Mesh(gL, GK.MAT.paint); me.castShadow = me.receiveShadow = true; me.position.set(cx - 0.4, y0 + D.hatchTop - 0.045, z0); if (o) me.userData.o = o; parent.add(me); lids.push(me); });

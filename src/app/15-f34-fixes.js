@@ -36,7 +36,7 @@ const F34 = (() => {
   }
   /* --- задвижки дренажных отводов (P53) и ответвления к ДТ(З) (P51) --- */
   function buildValves(parent, pickables, hAt) {
-    const g = new THREE.Group(); g.name = 'v0.34: задвижки дренажных отводов агрегатов (200-ТХ-002)'; parent.add(g);
+    const g = new THREE.Group(); g.name = 'Задвижки дренажных отводов агрегатов (200-ТХ-002)'; parent.add(g);
     const mB = new THREE.MeshStandardMaterial({ color: 0x2b2f33, roughness: 0.6, metalness: 0.4 }), mW = new THREE.MeshStandardMaterial({ color: 0xb02a20, roughness: 0.5, metalness: 0.3 });
     for (const [z, , xv] of DR) {
       const o = { id: 'ЗД-дренаж', net: 1, name: 'Задвижка дренажного отвода агрегата', note: `200-ТХ-002-0: дренажный отвод Ø32 к коллектору цеха с запорной арматурой (z ${z.toFixed(2).replace('.', ',')}). Тип и Ду арматуры, отметки — условно (позиции 18/58 спецификации — уточнить).` };

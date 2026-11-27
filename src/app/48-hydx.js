@@ -444,8 +444,8 @@ const HYDX = (() => {
     const on = st !== 'closed';
     let h = `<div class="n">${VTYP[v.typ] || v.typ}${v.tag ? ' · ' + v.tag : ''}. Положение: ${SRCN[v.src] || v.src}.</div>` + (v.note ? `<div class="n">${v.note}</div>` : '') +
       `<div class="pst ${on ? 'on' : 'off'}">Состояние (модель): <b>${big}</b></div>` +
-      (/^N[1-5]$/.test(id) ? `<div class="n">По 177-ТХ.С-001-0 и ОЛ-004 — кран шаровой DN150 с приводом Biffi (v0.22); в графе АК-004 обозначен как электрозадвижка.</div>` : '') +
-      `<div class="n">Ход (v0.35): ${KIND_N[x.kind]}, полный ход ${Math.round(x.travel)} с модельного времени — <i>условно</i> (паспорта привода нет). ` +
+      (/^N[1-5]$/.test(id) ? `<div class="n">По 177-ТХ.С-001-0 и ОЛ-004 — кран шаровой DN150 с приводом Biffi; в графе АК-004 обозначен как электрозадвижка.</div>` : '') +
+      `<div class="n">Ход: ${KIND_N[x.kind]}, полный ход ${Math.round(x.travel)} с модельного времени — <i>условно</i> (паспорта привода нет). ` +
       `Положение ${pct(id)} %; ζ = ${isFinite(H.valveZeta(VS.hydType(id), x.pos)) ? fmt(H.valveZeta(VS.hydType(id), x.pos), 2) : '∞'} (справочно, ${VS.hydType(id) === 'ball' ? 'кран' : 'задвижка'}). ` +
       `Маршрут собирается только из полностью открытой арматуры; при закрытии в ходе продукт идёт, пока арматура не закрылась.</div>`;
     h += `<div class="pbar">` + (isMoving(id) ? btn(`data-hv="stop" data-id="${id}"`, 'Стоп', 'red') : '') +
@@ -457,7 +457,7 @@ const HYDX = (() => {
   function flowOf(pid) { return S.flows.find(f => f.pumps.includes(pid) && L.st.pump[pid]); }
   function pumpExtra(pid) {
     const x = PSM.get(pid), def = D.pumps[pid]; if (!x) return '';
-    let h = `<div class="pst ${PSTC[x.state]}">Состояние агрегата (v0.35): <b>${PSM.label(pid).toUpperCase()}</b>${x.s > 0 && x.s < 0.999 ? ` · ${Math.round(x.s * 100)} % оборотов` : ''}${x.reason && (x.state === 'fault' || x.state === 'na' || x.state === 'stopping') ? ` · ${x.reason}` : ''}</div>`;
+    let h = `<div class="pst ${PSTC[x.state]}">Состояние агрегата: <b>${PSM.label(pid).toUpperCase()}</b>${x.s > 0 && x.s < 0.999 ? ` · ${Math.round(x.s * 100)} % оборотов` : ''}${x.reason && (x.state === 'fault' || x.state === 'na' || x.state === 'stopping') ? ` · ${x.reason}` : ''}</div>`;
     if (x.kind === 'vfd') h += `<div class="pbar"><span class="n" style="margin:0 6px 0 0">Частота ЧП (задание ${Math.round(x.sp * 50)} Гц):</span>` + [15, 25, 35, 45, 50].map(hz => btn(`data-hp="spd" data-id="${pid}" data-f="${hz / 50}"`, hz + ' Гц', 'sm' + (Math.abs(x.sp * 50 - hz) < 0.5 ? ' grn' : ''))).join('') + `</div>` +
       `<div class="n">Алгоритм регулирования ЧП (поддержание давления/расхода) в документах не указан — частота задаётся вручную; характеристика — по законам подобия (условно).</div>`;
     if (def) h += `<div class="n">Характеристика H(Q) в модели: через паспортную точку АК-004 (${def.Qn} м³/ч; ${def.Hn != null ? def.Hn + ' м' : 'объёмный'})` +
@@ -477,12 +477,12 @@ const HYDX = (() => {
   const MODE = { ok: 'работа на сеть', relief: 'открыт СППК (перепуск на всас)', shutoff: 'работа на закрытую задвижку', no_suction: 'нет всасывания', cavitation: 'кавитация', stopped: 'остановлен', blocked: 'заблокирован' };
   function liveHTML(f) {
     const y = f && f.hyd; if (!y) return '';
-    if (y.fallback) return `<div class="mt" style="color:#8a5a00">Гидравлика v0.35: расчёт не выполнен — ${y.why}. Подача — номинальная${y.s < 0.999 ? ` × ${Math.round(y.s * 100)} % (${sWhy(f)})` : ''}.</div>`;
+    if (y.fallback) return `<div class="mt" style="color:#8a5a00">Гидравлика: расчёт не выполнен — ${y.why}. Подача — номинальная${y.s < 0.999 ? ` × ${Math.round(y.s * 100)} % (${sWhy(f)})` : ''}.</div>`;
     const r = y.res, def = D.pumps[y.pid] || {};
     const sl = r.segs.filter(q => q.side === 'suc').reduce((a, q) => a + q.hf, 0), dl = r.segs.filter(q => q.side === 'dis').reduce((a, q) => a + q.hf, 0);
     const piB = r.segs.find(q => q.id === 'фильтр всаса ' + y.pid);
     const row = (n, v, i) => `<div><span>${n}</span><b>${v}</b>${i ? `<i>${i}</i>` : ''}</div>`;
-    let h = `<div class="oc" style="grid-column:1/-1;margin-top:6px">Гидравлика маршрута (расчёт v0.35 — модельные данные)</div>` +
+    let h = `<div class="oc" style="grid-column:1/-1;margin-top:6px">Гидравлика маршрута (расчёт — модельные данные)</div>` +
       row('Режим насоса', MODE[r.status] || r.status, (r.nPumps > 1 ? r.nPumps + ' насоса в параллель · ' : '') + (y.s < 0.999 ? `обороты ${Math.round(y.s * 100)} % (${sWhy(f)})` : '')) +
       row('Подача расчётная', `${fmt(r.Q, r.Q < 10 ? 2 : 1)} м³/ч`, `паспорт ${def.Qn != null ? def.Qn : '—'} м³/ч${r.Qbypass > 0.01 ? ` · перепуск СППК ${fmt(r.Qbypass, 1)} м³/ч` : ''}`) +
       row('Напор насоса', `${fmt(r.Hpump, 1)} м`, def.Hn != null ? `паспорт ${def.Hn} м` : '') +
@@ -501,7 +501,7 @@ const HYDX = (() => {
     const fl = Object.entries(d.fluids).map(([k, f]) => { const a = H.fluidAt(k, cfg.T); return `<tr><td>${f.name}</td><td class="r">${fmt(a.rho, 0)}</td><td class="r">${fmt(a.nu * 1e6, 2)}</td><td class="r">${fmt(a.pv / 1000, 1)}</td></tr>`; }).join('');
     const pu = Object.entries(d.pumps).map(([k, p]) => `<tr><td>${k}</td><td>${p.model}</td><td class="r">${p.Qn}</td><td class="r">${p.Hn == null ? '—' : p.Hn}</td><td class="r">${p.Pset == null ? '—' : fmt(p.Pset, 3)}</td></tr>`).join('');
     const tv = d.timing.valve;
-    const html = `<div class="oc">Гидравлика, насосы, арматура (v0.35)</div>` +
+    const html = `<div class="oc">Гидравлика, насосы, арматура</div>` +
       `<label class="chk">Температура продукта, °C <input type="number" id="hxT" min="-40" max="45" step="1" value="${cfg.T}" style="width:64px"></label>` +
       `<div class="rn">Подача — рабочая точка насоса на сети: потери по Дарси–Вейсбаху (λ — Свами–Джейн, шероховатость ${fmt(d.roughness.value * 1000, 1)} мм), длины, Dвн и повороты — по физическим трубам модели сети (PFLOW), перепад отметок — по 3D, уровни — модельные. ` +
       `На каждом насосе — фильтр на всасе и обратный клапан на нагнетании, на байпасе — СППК (АК-004). Все значения ниже — <b>модельные (PROVISIONAL)</b>, кроме паспортных точек насосов и настроек СППК.</div>` +

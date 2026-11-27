@@ -355,7 +355,7 @@ const procSim = (() => {
       `<div><span>Источник</span><b>${sv.map(v => v.n + ': ' + vv(v)).join('<br>')}</b></div><div><span>Приёмник</span><b>${dv.map(v => v.n + ': ' + vv(v)).join('<br>')}</b></div>` +
       (pis ? `<div><span>Давление на напоре (Рном АК-004)</span><b>${pis}</b></div>` : '') +
       `<div><span>До остановки</span><b>${isFinite(eta) ? hms(eta) : '—'}</b>${why ? `<i>${why}</i>` : ''}</div>` +
-      (window.__HYDX ? window.__HYDX.liveHTML(f) : '') + `<div class="mt">Модельное время ${hms(S.t)} · ускорение ×${S.speed}. Подача — ${f.hyd && !f.hyd.fallback ? 'расчётная (рабочая точка насоса на сети, v0.35)' : 'номинальная по паспорту насоса'}.</div></div>`;
+      (window.__HYDX ? window.__HYDX.liveHTML(f) : '') + `<div class="mt">Модельное время ${hms(S.t)} · ускорение ×${S.speed}. Подача — ${f.hyd && !f.hyd.fallback ? 'расчётная (рабочая точка насоса на сети)' : 'номинальная по паспорту насоса'}.</div></div>`;
   }
   const TLIST = ['RVS1', 'RVS2', 'RVS3', 'RGSZ1', 'RGSZ2', 'RGSB1', 'RGSB2', 'VC1', 'VC2', 'VC3', 'AC', 'KOT_T', 'DES_T'];
   function renderTanks(rebuild) {

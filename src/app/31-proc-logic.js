@@ -101,7 +101,7 @@ const procLogic = (() => {
     if (prods.size > 1) res.warn.push('Внимание: смешение продуктов (' + [...prods].map(p => PROD[p].n).join(' / ') + ').');
     const others = Object.keys(st.pump).filter(k => st.pump[k] && k !== pump);
     if (others.length) res.warn.push('Работают и другие насосы: ' + others.join(', ') + '.');
-    if (st.pump[pump]) { res.lvl = res.warn.length ? 'warn' : 'run'; res.text = `Идёт перекачка (модель): ${N[src].n.split(' (')[0]} → ${N[dst].n.split(' (')[0]}, насос ${pump}. Движение продукта будет показано на этапе 2.`; }
+    if (st.pump[pump]) { res.lvl = res.warn.length ? 'warn' : 'run'; res.text = `Идёт перекачка (модель): ${N[src].n.split(' (')[0]} → ${N[dst].n.split(' (')[0]}, насос ${pump}.`; }
     else { res.lvl = res.warn.length ? 'warn' : 'ok'; res.text = `Маршрут собран. Насос ${pump} остановлен — можно запускать.`; }
     return res;
   }

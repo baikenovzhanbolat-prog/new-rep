@@ -33,7 +33,7 @@ const F26 = (() => {
         `<button class="btn" data-f26dk="109-002">Лист 109-ТХ-002</button><button class="btn" data-f26doc="23">Лист ТЗ (спецификация)</button><button class="btn" data-f26dk="109-С">ТХ.С</button><button class="btn" data-dxeq="РВС-1000: люки и патрубки">Все люки и патрубки</button><button class="btn" data-f26v="${o.tank}">Вид на крышу</button></div>`;
     }
     if (o && /^109\.[123]$/.test(o.id)) return `<div class="dxc"><button class="btn" data-f26v="${o.id}">Вид на крышу</button><button class="btn" data-f26w="${o.id}">Вид на патрубки</button><button class="btn" data-dxeq="РВС-1000: люки и патрубки">Люки и патрубки</button><button class="btn" data-f26dk="109-002">Лист 109-ТХ-002</button>` +
-      `<div class="n">v0.26: люки, патрубки, приборы и комплектующие — по ТЗ на РВС-1000 и комплекту 109-ТХ (ТХ-002, ТХ.С, ТХ-001, ТХ.ВТ). Нажмите на люк, патрубок или прибор — откроется карточка позиции.</div></div>`;
+      `<div class="n">Люки, патрубки, приборы и комплектующие — по ТЗ на РВС-1000 и комплекту 109-ТХ (ТХ-002, ТХ.С, ТХ-001, ТХ.ВТ). Нажмите на люк, патрубок или прибор — откроется карточка позиции.</div></div>`;
     return '';
   }
   const VIEWS = {

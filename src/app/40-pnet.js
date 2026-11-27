@@ -59,7 +59,7 @@ const PNET = (() => {
   const netMesh = {};
   for (const k of OVER) for (const c of netLayers[k].children) if (c.userData.netsSeg === k && !c.userData.under) netMesh[k] = c;
   // 1.1 ГП-005, надземные участки
-  G('NETS', 'ГП-005, надземные участки. v0.12: отрезки-цилиндры по штрихам, ось «рельеф в середине отрезка + 0,6 м», стыки — сферы. v0.13: непрерывные трубы по осевой линии, отметка оси в узлах, отводы по углу');
+  G('NETS', 'ГП-005, надземные участки. Отрезки-цилиндры по штрихам, ось «рельеф в середине отрезка + 0,6 м», стыки — сферы. Непрерывные трубы по осевой линии, отметка оси в узлах, отводы по углу');
   for (const k of OVER) {
     const def = defOf[k], ay = def.ay || 0.6;
     NETS[k].forEach((s, si) => {
@@ -69,14 +69,14 @@ const PNET = (() => {
     });
   }
   // 1.2 ГП-005, подземные трассы (UGN, v0.7)
-  G('UGN', 'ГП-005, подземные участки: непрерывные трассы (пунктир листа сведён в линию, v0.7); глубина — условно');
+  G('UGN', 'ГП-005, подземные участки: непрерывные трассы (пунктир листа сведён в линию); глубина — условно');
   if (UGN.runsOf) for (const [k0, runs] of Object.entries(UGN.runsOf)) {
     const k = k0.startsWith('heat') ? 'heat' : k0;
     if (!NI[k]) continue;   // кабели и электрообогрев — не трубопроводы
     runs.forEach((run, ri) => polySegs(run.pts, { net: k, gen: 'UGN', r: (defOf[k] || {}).r || 0.08, od: null, under: 1, cas: run.cas ? 1 : 0, src: 'ГП-005', cf: { plan: 'V', elev: 'P', dn: 'N' }, rec: 'UGN:' + k0 + ':' + ri, sub: k0 }));
   }
   // 1.3 АК-041, насосный цех 200 (после правок v0.9)
-  G('PH', 'Насосный цех 200: план — АК-041; v0.29: отметки — по разрезам 200-ТХ-003-0, Ø — по ряду 200-ТХ.С-001-0, стояки в узлах с разной отметкой');
+  G('PH', 'Насосный цех 200: план — АК-041; отметки — по разрезам 200-ТХ-003-0, Ø — по ряду 200-ТХ.С-001-0, стояки в узлах с разной отметкой');
   const PHN = { L: 'dtl', Z: 'dtz', B: 'b', D: 'd', DT: 'dt' };
   const stdOD = D => [57, 76, 89, 108, 133, 159, 219, 273].some(v => Math.abs(D * 1000 - v) <= 1.2);   // иначе Ø снят по толщине линии на листе
   const phObj = {}; for (const c of PHG.children) if (c.userData.phPipe && c.userData.o) phObj[c.userData.o.name] = c.userData.o;
@@ -86,7 +86,7 @@ const PNET = (() => {
     const { p, c, D } = s, st = p.elSt || '';
     addSeg({ net: PHN[c], gen: 'PH', a: s.a, b: s.b, r: Math.max(0.03, D / 2), od: D, under: 0, src: 'АК-041 (план), 200-ТХ-003-0 (отметки)', cf: { plan: 'V', elev: st && !/условно/.test(st) ? 'V' : 'P', dn: p.odAk ? 'P' : 'V' }, ref: ['PH.pipes', PH.pipes.indexOf(p)], mt: phMat[c], obj: phObj[PH_CLS[c][1] + ' — насосный цех 200'], name: s.name || '', elDoc: st });
   }
-  G('PHC', 'АК-041, выходы из цеха (PH.conn): перемычка от стены цеха до конца трассы ГП-005; v0.29 — на отметке выхода (200-ТХ-003), стояк у наружной стены');
+  G('PHC', 'АК-041, выходы из цеха (PH.conn): перемычка от стены цеха до конца трассы ГП-005; на отметке выхода (200-ТХ-003), стояк у наружной стены');
   PH.conn.forEach((p, i) => {
     const [x1, z1, x2, z2, D, c, , lbl] = p, yo = phY(x1 - 0.05, z1);
     let yN = null; for (const s of segs) { if (s.net !== PHN[c] || s.gen === 'PH' || s.gen === 'PHC') continue; for (const e of [s.a, s.b]) if (Math.hypot(e[0] - x2, e[2] - z2) < 0.03 && (yN === null || Math.abs(e[1] - yo) < Math.abs(yN - yo))) yN = e[1]; }
@@ -94,7 +94,7 @@ const PNET = (() => {
     if (yN !== null && Math.abs(yN - yo) > 0.06) { addSeg({ net: PHN[c], gen: 'PHC', a: [x2, yo, z2], b: [x2, yN, z2], r: D / 2, od: D, under: 0, name: lbl + ' — подъём/опуск у наружной стены (наружная отметка — условно)', src: 'АК-041, 200-ТХ-003-0', cf: { plan: 'V', elev: 'P', dn: 'V' }, ref: ['PH.conn', i], mt: phMat[c], obj: phObj[lbl] }); F29.log.wallRisers++; }
   });
   // 1.4 АК-045/АК-004, эстакада 177
-  G('ESTQ', 'АК-045, эстакада 177: коллекторы, обвязка УСН/УНЖ/УПВС, дренаж ⌀273. v0.12: ломаные из отрезков, стыки — сферы. v0.13: непрерывные трубы, отводы по углу');
+  G('ESTQ', 'АК-045, эстакада 177: коллекторы, обвязка УСН/УНЖ/УПВС, дренаж ⌀273. Ломаные из отрезков, стыки — сферы. Непрерывные трубы, отводы по углу');
   const colNet = { 0xb88a00: 'dtl', 0xf2d24b: 'dtz', 0x00b7d8: 'b', 0x1fa045: 'd', 0xe0109c: 'gu', 0x8d949a: 'lzb' };
   (ESTQ.runs || []).forEach(([pts, r, mt, o], ri) => {
     const net = colNet[mt.color.getHex()] || 'lzb';
@@ -103,7 +103,7 @@ const PNET = (() => {
   // 1.5 PIPEREG: обвязка РВС (RVSD) и подключения насосов (PHX) — строятся своими модулями непрерывными трубами
   G('RVSD', 'Обвязка РВС-1000: патрубок → задвижка → трасса ГП-005, стояки В2/В10, Гу — непрерывные трубы с гнутыми отводами (модуль RVSD)');
   G('PHX', 'Подключения насосных агрегатов к трубам цеха: непрерывные трубы с отводами R = 1,5 DN (модуль PHX)');
-  G('RGSN', 'v0.32: РГС-75 — участки «задвижка → патрубок Ø108 днища» (строит модуль РГС-75, в сети — для потока ГСМ)');
+  G('RGSN', 'РГС-75 — участки «задвижка → патрубок Ø108 днища» (строит модуль РГС-75, в сети — для потока ГСМ)');
   const equipPts = [], phxRed = [];
   try { F34.regPipes(k => { const l = netLayers[k]; if (l) for (const c of l.children) if (c.userData.netsSeg === k && !c.userData.under) return c.material; return null; }, hAt); } catch (e) { console.warn('F34.regPipes', e); }   // v0.34
   PIPEREG.forEach((rec, ri) => {
@@ -116,8 +116,8 @@ const PNET = (() => {
     if (rec.eqStart) equipPts.push({ p: pts[0], name: rec.eqStart, net: rec.net });
     if (rec.eqEnd) equipPts.push({ p: pts[pts.length - 1], name: rec.eqEnd, net: rec.net });
   });
-  G('FILL', 'v0.13: восполнение разрывов по правилу заказчика (одна сеть, одна ось — смещение ≤ 5 см, разрыв ≤ 5 м) — требует уточнения');
-  G('RISE', 'v0.13: стояки в точках перехода «надземный ↔ подземный», где на ГП-005 конец надземной трассы и начало подземной разнесены');
+  G('FILL', 'Восполнение разрывов по правилу заказчика (одна сеть, одна ось — смещение ≤ 5 см, разрыв ≤ 5 м) — требует уточнения');
+  G('RISE', 'Стояки в точках перехода «надземный ↔ подземный», где на ГП-005 конец надземной трассы и начало подземной разнесены');
   for (const s of segs) { s.fam = NI[s.net].fam; s.prod = NI[s.net].prod; }
 
   /* ---------- 1.9 (v0.15) векторный лист ГП-005 — источник подтверждения ----------
@@ -810,7 +810,7 @@ const PNET = (() => {
     if (!RENDER.has(p.gen) && !fillUnder) return null;
     if (p.under && !fillUnder) return null;
     let parent, mt, r = p.r, obj = p.obj;
-    if (fillUnder) { parent = UGN.cat[UGCAT[p.net]] || UGN.root; mt = ugMat(p.net); obj = { id: 'восп.', net: 1, name: NI[p.net].nm + ' — восполненный разрыв (подземный)', note: 'v0.13: разрыв подземной трассы ГП-005 восполнен по соосности (правило заказчика). Требует уточнения по продольным профилям.' }; }
+    if (fillUnder) { parent = UGN.cat[UGCAT[p.net]] || UGN.root; mt = ugMat(p.net); obj = { id: 'восп.', net: 1, name: NI[p.net].nm + ' — восполненный разрыв (подземный)', note: 'Разрыв подземной трассы ГП-005 восполнен по соосности (правило заказчика). Требует уточнения по продольным профилям.' }; }
     else if (p.gen === 'PH' || p.gen === 'PHC') { parent = PHG; mt = p.mt; }
     else if (p.gen === 'ESTQ') { parent = ESTQ.g; mt = p.mt; }
     else if (p.gen === 'PHX') { parent = p.parent; mt = p.mt; }
@@ -1088,7 +1088,7 @@ const PNET = (() => {
     DEG: 'Исключить из геометрии (артефакт оцифровки).',
     PROCX: 'Сверить ребро графа с физической трассой: либо добавить трубу по документам, либо пометить связь как условную.',
     PROCU: 'Связь нужна для работы маршрута; физическую трассу уточнить по ТХ.',
-    PROCA: 'Замечание схемы, не трубы: ось ребра графа ТП проведена в стороне от трубы (> 0,3 м), но цепочка физических труб между узлами ребра непрерывна — поток и маршрут строятся по трубам (v0.18). Исправлять не требуется.',
+    PROCA: 'Замечание схемы, не трубы: ось ребра графа ТП проведена в стороне от трубы (> 0,3 м), но цепочка физических труб между узлами ребра непрерывна — поток и маршрут строятся по трубам. Исправлять не требуется.',
     FILL: 'Основание соединения — в описании: линия на векторном ГП-005, разрыв под подпись либо правило заказчика (последнее — подтвердить по ТХ).',
     CONT: 'Подтвердить по ГП-005 (DWG), что исключённая линия — контур трубы, а не отдельный трубопровод.',
     TRIM: 'Артефакт оцифровки устранён; подтверждения не требует, если трасса на ГП-005 одна.',
@@ -1313,7 +1313,7 @@ const PNET = (() => {
       `<div>Начало: ${nodeTxt(p.na)}<br>Конец: ${nodeTxt(p.nb)}</div>` +
       `<div>Отметка оси: ${y0 === y1 ? lvl(y0) : lvl(y0) + '…' + lvl(y1)}${p.under ? ' (заглубление условно)' : ''}</div>` +
       `<div>Источник: ${p.src}${p.name ? ' · «' + p.name + '»' : ''}</div>` +
-      (p.fill ? `<div style="color:#c46a00">Содержит восполненный разрыв (v0.13, по соосности — требует уточнения)</div>` : '') +
+      (p.fill ? `<div style="color:#c46a00">Содержит восполненный разрыв (по соосности — требует уточнения)</div>` : '') +
       `<div>Достоверность: ${cfTxt(p.cf)}</div>` +
       (eqs.length ? `<div>Оборудование: ${eqs.join('; ')}</div>` : '') +
       `<div>Граф ТП: ${p.proc.length ? p.proc.map(id => { const e = procLogic.E.find(q => q.id === id); return id + (e && e.n ? ' «' + e.n + '»' : ''); }).join('; ') : 'не сопоставлен'}. Маршруты М1–М9 — после синхронизации (итерация 6).</div>` +
@@ -1393,9 +1393,9 @@ const PNET = (() => {
   `;
   document.head.appendChild(css);
   const panel = document.createElement('div'); panel.id = 'pipep';
-  panel.innerHTML = `<div class="ph"><b>Трубопроводная сеть</b><span>модель, проверка, геометрия · v0.13</span><button class="lbtn" id="pipeX">✕</button></div>
-    <div class="tabs"><button data-t="sum" class="on">Сводка</button><button data-t="iss">Проблемы</button><button data-t="src">Источники</button></div>
-    <div id="pipeBody"></div>`;
+  panel.innerHTML = `<div class="ph"><b>Трубопроводная сеть</b><span>модель, проверка, геометрия ·</span><button class="lbtn" id="pipeX">✕</button></div>
+ <div class="tabs"><button data-t="sum" class="on">Сводка</button><button data-t="iss">Проблемы</button><button data-t="src">Источники</button></div>
+ <div id="pipeBody"></div>`;
   document.body.appendChild(panel);
   const body = panel.querySelector('#pipeBody');
   let tab = 'sum', fNet = '', fCat = '', fSev = '2';
@@ -1433,18 +1433,18 @@ const PNET = (() => {
         `<tr><td>Подъёмов/опусков (над/под землёй)</td><td>${stat.rises}</td></tr><tr><td>Пересечений на разных отметках</td><td>${stat.crossOK}</td></tr>` +
         `<tr><td>Переходов (редукторов) в модели</td><td>${FG.red + FG.elbowRed + FG.phxRed}</td></tr><tr><td>Фланцевых соединений у арматуры, насосов, стояков (PN16 — условно)</td><td>${FLANGE_STAT.valve + FLANGE_STAT.pump + FLANGE_STAT.riser}</td></tr>` +
         `<tr><td>Опор с хомутом на трассах ГП-005 (шаг 3 м — условно)</td><td>${PG.sup}</td></tr></table>` +
-        `<div class="oc">Итерация 4 (v0.13): исправления и построение</div><table>` +
+        `<div class="oc">Итерация 4: исправления и построение</div><table>` +
         `<tr><td>Разрывов восполнено по соосности</td><td>${stat.fills}</td></tr><tr><td>Контуров трубы исключено</td><td>${stat.contours}</td></tr><tr><td>Наложений отрезков устранено</td><td>${stat.trims}</td></tr>` +
         `<tr><td>Поворотов с гнутым отводом (построено)</td><td>${PG.bends}</td></tr><tr><td>Заглушек на свободных концах</td><td>${PG.caps}</td></tr>` +
-        `<tr><td>Мешей труб / вершин</td><td>${PG.meshes} / ${PG.verts}</td></tr><tr><td>Удалено элементов прежней геометрии (v0.2–v0.12)</td><td>${PG.hidden}</td></tr></table>` +
-        `<div class="oc">v0.15: сверка с векторным ГП-005</div><table>` +
+        `<tr><td>Мешей труб / вершин</td><td>${PG.meshes} / ${PG.verts}</td></tr><tr><td>Удалено элементов прежней геометрии</td><td>${PG.hidden}</td></tr></table>` +
+        `<div class="oc">Сверка с векторным ГП-005</div><table>` +
         `<tr><td>Штрихов подписей исключено</td><td>${stat.drops}</td></tr><tr><td>Поворотов восстановлено</td><td>${stat.corns}</td></tr>` +
         `<tr><td>Концов доведено до трубы</td><td>${stat.exts}</td></tr><tr><td>Разрывов соединено: линия на листе / подпись / правило</td><td>${V15.fillV} / ${V15.fillL} / ${V15.fillR}</td></tr>` +
         `<tr><td>Элементов с Ø по графике листа (измерено / по продолжению)</td><td>${V15.odm} / ${V15.odp}</td></tr>` +
         `<tr><td>Пересечений разведено: по невидимым линиям / условно</td><td>${V15.xHid} / ${V15.xCond}</td></tr><tr><td>Пересечений не разведено</td><td>${V15.xFail}</td></tr>` +
         `<tr><td>Окончаний в колодцах и камерах</td><td>${stat.wellEnds}</td></tr><tr><td>Заглушек коллекторов (конец за последним ответвлением)</td><td>${stat.capEnds}</td></tr>` +
         `<tr><td>Свободных концов: линия на листе кончается / идёт дальше</td><td>${stat.endsNoEv} / ${stat.endsEv}</td></tr></table>` +
-        `<div class="oc">Итерация 5 (v0.14): фасонные детали — исполнение условное</div><table>` +
+        `<div class="oc">Итерация 5: фасонные детали — исполнение условное</div><table>` +
         `<tr><td>Отводов между участками (R = 1,5 Dн)</td><td>${FG.elbow}</td></tr><tr><td>— из них с переходом Ø</td><td>${FG.elbowRed}</td></tr>` +
         `<tr><td>Переходов концентрических (подтверждённая смена Ø)</td><td>${FG.red}</td></tr><tr><td>Переходов у патрубков насосов</td><td>${FG.phxRed}</td></tr>` +
         `<tr><td>Тройников и крестовин</td><td>${FG.tee}</td></tr><tr><td>Врезок (сварное ответвление)</td><td>${FG.branch}</td></tr>` +
@@ -1453,7 +1453,7 @@ const PNET = (() => {
         `<label style="display:flex;gap:6px;align-items:center;margin-top:7px"><input type="checkbox" id="pdCb" ${layerApi.isOn('pdiag') ? 'checked' : ''}>Маркеры замечаний на сцене</label>` +
         `<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="pnCb" ${layerApi.isOn('pnodes') ? 'checked' : ''}>Узлы сети (красные — открытые концы)</label>` +
         `<div style="display:flex;gap:6px;margin-top:7px"><button class="pbtn sm" id="pdCsv">Экспорт замечаний (CSV)</button><button class="pbtn sm" id="pdClr">Снять подсветку</button></div>` +
-        `<div class="nt">Модель собрана из существующих данных. Валидатор сам ничего не исправляет; исправления v0.13–v0.14 выполнены только по согласованным правилам и записаны в журнал («Исправлено: …»), фасонные детали — условное исполнение («Фасонная деталь смоделирована условно»). Достоверность: трассы в плане по ГП-005/АК-041 — подтверждены; отметки осей надземных сетей (0,6 м над землёй) и глубины подземных — условны; диаметры сетей ГП-005 на листе не указаны. Построение ${fmt(tBuild, 0)} мс, проверка ${fmt(tVal, 0)} мс.</div>`;
+        `<div class="nt">Модель собрана из существующих данных. Валидатор сам ничего не исправляет; исправления выполнены только по согласованным правилам и записаны в журнал («Исправлено: …»), фасонные детали — условное исполнение («Фасонная деталь смоделирована условно»). Достоверность: трассы в плане по ГП-005/АК-041 — подтверждены; отметки осей надземных сетей (0,6 м над землёй) и глубины подземных — условны; диаметры сетей ГП-005 на листе не указаны. Построение ${fmt(tBuild, 0)} мс, проверка ${fmt(tVal, 0)} мс.</div>`;
       body.innerHTML = h;
       body.querySelector('#pdCb').onchange = e => layerApi.setVis('pdiag', e.target.checked);
       body.querySelector('#pnCb').onchange = e => layerApi.setVis('pnodes', e.target.checked);
@@ -1480,19 +1480,19 @@ const PNET = (() => {
         `<div class="oc">Не входят в модель физических труб</div>` +
         `<div class="nt"><b>PROC</b> — граф ТП (${procLogic.E.length} рёбер): технологическая модель; сверяется с трубами (замечания «граф ТП»). Покрыто физическими трубами ≥ 95 %: ${procLogic.E.filter(e => e._pnet && e._pnet.cov >= 0.95).length} из ${procLogic.E.filter(e => e._pnet).length} рёбер-труб.` + (window.__PFLOW ? ' ' + window.__PFLOW.statText() : '') + `</div>` +
         `<div class="nt"><b>el, cab1, cab2, eh</b> — кабели и электрообогрев (не трубопроводы).</div>` +
-        `<div class="nt"><b>PIPED</b> — v0.13: сферы на стыках, условные фланцы, хомуты и изоляция теплосети скрыты (заменены построителем PGEO); бирки маркировки сохранены.</div>`;
+        `<div class="nt"><b>PIPED</b> — сферы на стыках, условные фланцы, хомуты и изоляция теплосети скрыты (заменены построителем PGEO); бирки маркировки сохранены.</div>`;
       body.innerHTML = h;
     }
   }
   let showingOld = false;
-  function showOld(on) { showingOld = on; for (const m of oldMeshes) m.visible = on; for (const m of newMeshes) m.visible = !on; toast(on ? 'Показана исходная геометрия v0.12: отрезки, сферы на стыках, ступеньки' : 'Показана геометрия v0.13: непрерывные трубы с отводами'); }
+  function showOld(on) { showingOld = on; for (const m of oldMeshes) m.visible = on; for (const m of newMeshes) m.visible = !on; toast(on ? 'Показана исходная геометрия: отрезки, сферы на стыках, ступеньки' : 'Показана геометрия: непрерывные трубы с отводами'); }
   const syncTabs = () => panel.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x.dataset.t === tab));
   function exportCSV() {
     const q = v => '"' + String(v === null || v === undefined ? '' : v).replace(/"/g, '""') + '"';
     const rows = [['ID', 'Вид', 'Важность', 'Сеть', 'Трубопроводы', 'Узел', 'X', 'Y (отм.)', 'Z', 'Величина', 'Описание', 'Рядом', 'Рекомендация', 'Статус']];
     for (const it of issues) rows.push([it.id, CAT[it.cat], SEV[it.sev], it.net ? NI[it.net].code : '', it.pipes.map(p => p.id).join(' '), it.node ? nid(it.node) : '', fmt(it.p[0], 3), fmt(H + it.p[1], 3), fmt(it.p[2], 3), it.d === null || it.d === undefined ? '' : fmt(it.d, 3), it.txt || '', it.eq, REC[it.cat], it.status]);
     const blob = new Blob(['﻿' + rows.map(r => r.map(q).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oskemen_pipe_check_v0.15.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'oskemen_pipe_check.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
   /* ---------- 11. запуск ---------- */
