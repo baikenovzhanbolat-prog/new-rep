@@ -10,7 +10,9 @@
     "build:ref": "node tools/build.mjs",
     "verify": "node tools/verify.mjs",
     "smoke": "node tools/smoke.mjs",
-    "test": "npm run verify && npm run build && npm run build:ref && node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html"
+    "test": "npm run verify && npm run build && npm run build:ref && node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html && npm run test:fp",
+    "fp": "node tools/fingerprint.mjs",
+    "test:fp": "node tools/fingerprint.mjs dist/reference/genplan-3d-oskemen.html ref && node tools/fingerprint.mjs dist/genplan-3d-oskemen.html vite && node tools/fingerprint.mjs --diff dist/fp/ref.json dist/fp/vite.json"
   },
   "engines": {
     "node": ">=20.19"

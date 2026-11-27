@@ -23,3 +23,9 @@ function loop() {
 }
 try { purgeOld(); } catch (e) { console.warn('purgeOld:', e); }   // v0.28
 loop();
+/* отладка и автотесты (tools/fingerprint.mjs): доступ к сцене и данным только при ?debug в адресе */
+if (/[?&]debug\b/.test(location.search)) window.__genplan = {
+  THREE, scene, camera, renderer, pickables, OBJ, PIPEREG,
+  data: { NETS, PH, UG_DATA, PHX_DATA, PROC, WELLS_DATA, GP5V },
+  logs: { F24, F25, F26, F27, F28, F29, F31, F32, F34 },
+};
