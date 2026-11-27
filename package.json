@@ -1,0 +1,14 @@
+{
+  "name": "genplan-3d-oskemen",
+  "version": "0.42.0",
+  "private": true,
+  "description": "Цифровой двойник нефтебазы ТС Оскемен: 3D-генплан, технология, сети (Three.js, офлайн-HTML)",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "verify": "node tools/verify.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "test": "node tools/verify.mjs && node tools/smoke.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

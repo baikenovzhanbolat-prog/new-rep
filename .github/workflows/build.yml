@@ -1,0 +1,28 @@
+name: build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Сборка
+        run: node tools/build.mjs
+      - name: Сверка с эталоном
+        run: node tools/verify.mjs
+      - name: Смоук-тест в Chromium
+        run: |
+          npm i --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+          node tools/smoke.mjs
+      - name: Собранный HTML
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genplan-3d-oskemen
+          path: dist/genplan-3d-oskemen.html

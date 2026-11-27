@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Генплан 3D — ТС Оскемен · v0.42</title>
+<style>
+<!--@inline src/styles.css--></style>
+<!-- Three.js r160 и OrbitControls встроены в файл (data:URL) — двойник работает без интернета.
+     Исходники: three@0.160.0/build/three.module.js (sha256 76dea815…a495), examples/jsm/controls/OrbitControls.js (sha256 5a44a9e8…b064). Лицензия MIT. -->
+<script><!--@inline vendor/mp4-muxer.js--></script>
+<script type="importmap">
+{"imports":{
+  "three":"data:text/javascript;base64,<!--@base64 vendor/three.module.js-->",
+  "three/addons/controls/OrbitControls.js":"data:text/javascript;base64,<!--@base64 vendor/OrbitControls.js-->"
+}}
+</script>
+</head>
+<body>
+<div id="labels"></div>
+<div id="top">
+  <div id="title">Генплан нефтебазы · 3D демо<br><small>5632.29-ГП-001…005; АК-004, АК-041 · М 1:500</small></div>
+  <button class="btn on" id="bLab">Подписи</button>
+  <button class="btn" id="bMdl" style="display:none">Модели склада</button>
+  <button class="btn" id="bObj">Объекты</button>
+  <button class="btn" id="bNet">Слои</button>
+  <button class="btn" id="bProc" title="Технологические операции: маршруты, арматура, насосы (этап 1)">Технология</button>
+  <button class="btn" id="bUG" title="Подземные сети: земля полупрозрачна, трубы, колодцы, ёмкости и разрез грунта (этап 6.7)">Подземные сети</button>
+  <button class="btn" id="bPipe" title="Трубопроводная сеть: единая модель, паспорта участков, проверка связности (v0.12)">Трубопроводы</button>
+  <button class="btn" id="bGP" title="Генеральный план: паспорт объекта, покрытия, земляные массы, координаты и отметки, сверка модели с листами ГП (v0.17)">Генплан</button>
+  <button class="btn" id="bWalk" title="Виртуальный обход от первого лица: ходьба по территории, лестницы, столкновения с оборудованием (этап 3)">Обход</button>
+  <button class="btn" id="b3d">Обзор</button>
+  <button class="btn" id="bTop">Сверху</button>
+</div>
+<div id="netp"></div>
+<div id="ugp"></div>
+<div id="objp"><div style="display:flex;align-items:center"><b style="flex:1">Объекты генплана</b><span id="objN" style="font-size:11px;color:#6b7b88"></span></div>
+  <input id="objQ" type="search" placeholder="Поиск: номер или название (напр. 109, насос, РГС)" autocomplete="off"><div id="objList"></div></div>
+<div id="hud"><div id="perf"></div><div class="row">
+  <div id="scale" title="Масштаб в плоскости точки вращения камеры; при наклонном виде — приближённо"><span id="scT"></span><div class="bar" id="scB"></div></div>
+  <div id="comp" title="Север — по розе ветров листа ГП-002 (45,8° против часовой стрелки от верха листа). Нажмите, чтобы развернуть вид севером вверх.">
+    <svg viewBox="-24 -24 48 48" width="48" height="48"><g id="compR">
+      <polygon points="0,-17 5,1 0,-2 -5,1" fill="#c0392b"/><polygon points="0,17 5,1 0,-2 -5,1" fill="#9aa4ad"/>
+      <text x="0" y="-12.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="#fff" font-family="system-ui,Arial">С</text></g>
+      <circle r="22" fill="none" stroke="#c5cfd8" stroke-width="1"/></svg></div></div></div>
+<div id="procp"><div class="ph"><b>Технологические операции</b><span>этап 2 · модель</span><button class="lbtn" id="prX">✕</button></div><div class="tabs"><button data-tab="routes" class="on">Маршруты</button><button data-tab="tanks">Ёмкости</button><button data-tab="model">Модель</button><button data-tab="est">Эстакада</button><button data-tab="emg">ПАЗ</button></div><div id="prRoutes"><div id="prList"></div><div id="prDet"></div></div><div id="prTanks" style="display:none"></div><div id="prModel" style="display:none"></div><div id="prEst" style="display:none"></div><div id="prEmg" style="display:none"></div></div>
+<div id="simChip" style="display:none" title="Идёт перекачка (модель) — открыть панель"></div>
+<div id="toast"></div>
+<div id="alarmBar" style="display:none" role="alert"></div>
+<div id="info"><button class="x" id="iX">×</button><div id="iT"></div></div>
+<div id="foot"><span class="short">ГП-002…005; АК-041 · рельеф и пути — по ГП-003/004</span><span class="long">План — ГП-002; рельеф, покрытия, МАФ — ГП-003; сети и освещение — ГП-005; насосный цех — АК-041; технологический граф — АК-004/006; поток ГСМ — по физическим трубам модели сети (v0.18); ПАЗ — по АК-002/004 (v0.19); РГС-75 (116.1–116.4) — по «Резервуар 1.pdf» и ГП-003, паспорта резервуаров (v0.20); документация ТХ 222.pdf / 333.pdf — паспорта оборудования, механизм 901, навес 196, шахтная лестница РВС, сверка (v0.21); эстакада 177 — устройства УСН-150, УНЖ6-100, УПВС-80С, мостики МП-4, шаровые краны N1–N5 и вагоны-цистерны по данным ТХ и изготовителей (v0.22); арматура цеха 200 по 200-ТХ.С-001-0 и ОЛ-005…008, материалы и окраска по ГОСТ 14202 (v0.23); 444.pdf — вышки лафетного ствола 800, пенотушение ГПС-600 цеха 200 и РГС, кран 1 т и приямок цеха, документы ПТ/ТК, паспорта и сверка (v0.24); станция налива 186 по 186-ТХ-002-0 (АСН-80-02.01, площадка +2,700, МП-4, арматура, автоцистерна — условно) и надземный переход ДТ(Л) к котельной по 152-ТК-007-0 (v0.25); РВС-1000 — люки, патрубки, приборы и комплектующие по ТЗ (222.pdf, л. 21–23) и комплекту 109-ТХ, изоляция 80 мм; КО-2 / КО-3 узла 14 — КЭО 50/16 по 152-ТК.С (v0.26); пункт заправки 166 по 166-ТХ-002-0: навес, площадка с лотком, ТРК «Нара 4000», насосно-измерительные блоки, вводы с кранами и изоляцией ДТ(Л) (v0.27). Рельеф, ж/д пути и площадка эстакады — по отметкам ГП-003/ГП-004 (v0.17); высоты зданий — условные. Насосы (состояния, ЧП), ход арматуры, гидравлика маршрутов по физическим трубам — v0.35 (модельные данные).</span> <span class="kb"><b>Клавиши (ПК):</b> ←↑→↓ — движение, A/D — поворот, W/S — наклон, Q/E или PgUp/PgDn — вверх/вниз, +/− — приближение, Shift — быстрее.</span> <span class="long" id="mStat"></span> <span style="opacity:.65">· v0.42</span></div>
+
+<!-- v0.20: встроенные материалы «Резервуар 1.pdf» (стр. 1–2 — исходный PDF без изменений содержимого; стр. 1–4 — изображения для просмотра без интернета) -->
+<script type="text/plain" id="dxP_222-1"><!--@base64 assets/scans/dxP_222-1.webp--></script>
+<script type="text/plain" id="dxP_222-2"><!--@base64 assets/scans/dxP_222-2.webp--></script>
+<script type="text/plain" id="dxP_222-3"><!--@base64 assets/scans/dxP_222-3.webp--></script>
+<script type="text/plain" id="dxP_222-4"><!--@base64 assets/scans/dxP_222-4.webp--></script>
+<script type="text/plain" id="dxP_222-5"><!--@base64 assets/scans/dxP_222-5.webp--></script>
+<script type="text/plain" id="dxP_222-6"><!--@base64 assets/scans/dxP_222-6.webp--></script>
+<script type="text/plain" id="dxP_222-7"><!--@base64 assets/scans/dxP_222-7.webp--></script>
+<script type="text/plain" id="dxP_222-8"><!--@base64 assets/scans/dxP_222-8.webp--></script>
+<script type="text/plain" id="dxP_222-9"><!--@base64 assets/scans/dxP_222-9.webp--></script>
+<script type="text/plain" id="dxP_222-10"><!--@base64 assets/scans/dxP_222-10.webp--></script>
+<script type="text/plain" id="dxP_222-11"><!--@base64 assets/scans/dxP_222-11.webp--></script>
+<script type="text/plain" id="dxP_222-12"><!--@base64 assets/scans/dxP_222-12.webp--></script>
+<script type="text/plain" id="dxP_222-13"><!--@base64 assets/scans/dxP_222-13.webp--></script>
+<script type="text/plain" id="dxP_222-14"><!--@base64 assets/scans/dxP_222-14.webp--></script>
+<script type="text/plain" id="dxP_222-15"><!--@base64 assets/scans/dxP_222-15.webp--></script>
+<script type="text/plain" id="dxP_222-16"><!--@base64 assets/scans/dxP_222-16.webp--></script>
+<script type="text/plain" id="dxP_222-17"><!--@base64 assets/scans/dxP_222-17.webp--></script>
+<script type="text/plain" id="dxP_222-18"><!--@base64 assets/scans/dxP_222-18.webp--></script>
+<script type="text/plain" id="dxP_222-19"><!--@base64 assets/scans/dxP_222-19.webp--></script>
+<script type="text/plain" id="dxP_222-20"><!--@base64 assets/scans/dxP_222-20.webp--></script>
+<script type="text/plain" id="dxP_222-21"><!--@base64 assets/scans/dxP_222-21.webp--></script>
+<script type="text/plain" id="dxP_222-22"><!--@base64 assets/scans/dxP_222-22.webp--></script>
+<script type="text/plain" id="dxP_222-23"><!--@base64 assets/scans/dxP_222-23.webp--></script>
+<script type="text/plain" id="dxP_333-1"><!--@base64 assets/scans/dxP_333-1.webp--></script>
+<script type="text/plain" id="dxP_333-2"><!--@base64 assets/scans/dxP_333-2.webp--></script>
+<script type="text/plain" id="dxP_333-3"><!--@base64 assets/scans/dxP_333-3.webp--></script>
+<script type="text/plain" id="dxP_333-4"><!--@base64 assets/scans/dxP_333-4.webp--></script>
+<script type="text/plain" id="dxP_333-5"><!--@base64 assets/scans/dxP_333-5.webp--></script>
+<script type="text/plain" id="dxP_333-6"><!--@base64 assets/scans/dxP_333-6.webp--></script>
+<script type="text/plain" id="dxP_333-7"><!--@base64 assets/scans/dxP_333-7.webp--></script>
+<script type="text/plain" id="dxP_333-8"><!--@base64 assets/scans/dxP_333-8.webp--></script>
+<script type="text/plain" id="dxP_333-9"><!--@base64 assets/scans/dxP_333-9.webp--></script>
+<script type="text/plain" id="dxP_333-10"><!--@base64 assets/scans/dxP_333-10.webp--></script>
+<script type="text/plain" id="dxP_333-11"><!--@base64 assets/scans/dxP_333-11.webp--></script>
+<script type="text/plain" id="dxP_333-12"><!--@base64 assets/scans/dxP_333-12.webp--></script>
+<script type="text/plain" id="dxP_333-13"><!--@base64 assets/scans/dxP_333-13.webp--></script>
+<script type="text/plain" id="dxP_333-14"><!--@base64 assets/scans/dxP_333-14.webp--></script>
+<script type="text/plain" id="dxP_333-15"><!--@base64 assets/scans/dxP_333-15.webp--></script>
+<script type="text/plain" id="dxP_333-16"><!--@base64 assets/scans/dxP_333-16.webp--></script>
+<script type="text/plain" id="dxP_333-17"><!--@base64 assets/scans/dxP_333-17.webp--></script>
+<script type="text/plain" id="dxP_333-18"><!--@base64 assets/scans/dxP_333-18.webp--></script>
+<script type="text/plain" id="dxP_333-19"><!--@base64 assets/scans/dxP_333-19.webp--></script>
+<script type="text/plain" id="dxP_333-20"><!--@base64 assets/scans/dxP_333-20.webp--></script>
+<script type="text/plain" id="dxP_333-21"><!--@base64 assets/scans/dxP_333-21.webp--></script>
+<script type="text/plain" id="dxP_333-22"><!--@base64 assets/scans/dxP_333-22.webp--></script>
+<script type="text/plain" id="dxP_333-23"><!--@base64 assets/scans/dxP_333-23.webp--></script>
+<script type="text/plain" id="dxP_333-24"><!--@base64 assets/scans/dxP_333-24.webp--></script>
+<script type="text/plain" id="dxP_333-25"><!--@base64 assets/scans/dxP_333-25.webp--></script>
+<script type="text/plain" id="dxP_222-13x"><!--@base64 assets/scans/dxP_222-13x.webp--></script>
+<script type="text/plain" id="dxP_444-1"><!--@base64 assets/scans/dxP_444-1.webp--></script>
+<script type="text/plain" id="dxP_444-2"><!--@base64 assets/scans/dxP_444-2.webp--></script>
+<script type="text/plain" id="dxP_444-3"><!--@base64 assets/scans/dxP_444-3.webp--></script>
+<script type="text/plain" id="dxP_444-4"><!--@base64 assets/scans/dxP_444-4.webp--></script>
+<script type="text/plain" id="dxP_444-5"><!--@base64 assets/scans/dxP_444-5.webp--></script>
+<script type="text/plain" id="dxP_444-6"><!--@base64 assets/scans/dxP_444-6.webp--></script>
+<script type="text/plain" id="dxP_444-7"><!--@base64 assets/scans/dxP_444-7.webp--></script>
+<script type="text/plain" id="dxP_444-8"><!--@base64 assets/scans/dxP_444-8.webp--></script>
+<script type="text/plain" id="dxP_444-9"><!--@base64 assets/scans/dxP_444-9.webp--></script>
+<script type="text/plain" id="dxP_444-10"><!--@base64 assets/scans/dxP_444-10.webp--></script>
+<script type="text/plain" id="dxP_444-11"><!--@base64 assets/scans/dxP_444-11.webp--></script>
+<script type="text/plain" id="dxP_444-12"><!--@base64 assets/scans/dxP_444-12.webp--></script>
+<script type="text/plain" id="dxP_444-13"><!--@base64 assets/scans/dxP_444-13.webp--></script>
+<script type="text/plain" id="dxP_444-14"><!--@base64 assets/scans/dxP_444-14.webp--></script>
+<script type="text/plain" id="dxP_444-15"><!--@base64 assets/scans/dxP_444-15.webp--></script>
+<script type="text/plain" id="dxP_444-16"><!--@base64 assets/scans/dxP_444-16.webp--></script>
+<script type="text/plain" id="dxP_444-17"><!--@base64 assets/scans/dxP_444-17.webp--></script>
+<script type="text/plain" id="dxP_444-18"><!--@base64 assets/scans/dxP_444-18.webp--></script>
+<script type="text/plain" id="dxP_444-19"><!--@base64 assets/scans/dxP_444-19.webp--></script>
+<script type="text/plain" id="dxP_444-20"><!--@base64 assets/scans/dxP_444-20.webp--></script>
+<script type="text/plain" id="dxP_444-21"><!--@base64 assets/scans/dxP_444-21.webp--></script>
+<script type="text/plain" id="dxP_444-23"><!--@base64 assets/scans/dxP_444-23.webp--></script>
+<script type="text/plain" id="dxP_444-24"><!--@base64 assets/scans/dxP_444-24.webp--></script>
+<script type="text/plain" id="dxP_444-25"><!--@base64 assets/scans/dxP_444-25.webp--></script>
+<script type="text/plain" id="dxP_555-16"><!--@base64 assets/scans/dxP_555-16.webp--></script>
+<script type="text/plain" id="dxP_555-16x"><!--@base64 assets/scans/dxP_555-16x.webp--></script>
+<script type="text/plain" id="dxP_555-17"><!--@base64 assets/scans/dxP_555-17.webp--></script>
+<script type="text/plain" id="dxP_555-18"><!--@base64 assets/scans/dxP_555-18.webp--></script>
+<script type="text/plain" id="dxP_555-19"><!--@base64 assets/scans/dxP_555-19.webp--></script>
+<script type="text/plain" id="dxP_555-20"><!--@base64 assets/scans/dxP_555-20.webp--></script>
+<script type="text/plain" id="dxP_555-21"><!--@base64 assets/scans/dxP_555-21.webp--></script>
+<script type="text/plain" id="dxP_555-22"><!--@base64 assets/scans/dxP_555-22.webp--></script>
+<script type="text/plain" id="dxP_555-25"><!--@base64 assets/scans/dxP_555-25.webp--></script>
+<script type="text/plain" id="dxP_555-26"><!--@base64 assets/scans/dxP_555-26.webp--></script>
+<script type="text/plain" id="dxP_555-27"><!--@base64 assets/scans/dxP_555-27.webp--></script>
+<script type="text/plain" id="dxP_555-9"><!--@base64 assets/scans/dxP_555-9.webp--></script>
+<script type="text/plain" id="dxP_R1-5"><!--@base64 assets/scans/dxP_R1-5.webp--></script>
+<script type="text/plain" id="rgsDocPdf"><!--@base64 assets/docs/rgsDocPdf.pdf--></script>
+<script type="text/plain" id="rgsDocP1"><!--@base64 assets/docs/rgsDocP1.png--></script>
+<script type="text/plain" id="rgsDocP2"><!--@base64 assets/docs/rgsDocP2.png--></script>
+<script type="text/plain" id="rgsDocP3"><!--@base64 assets/docs/rgsDocP3.png--></script>
+<script type="text/plain" id="rgsDocP4"><!--@base64 assets/docs/rgsDocP4.png--></script>
+<script type="module">
+<!--@concat src/app--></script>
+</body>
+</html>
