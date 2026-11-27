@@ -43,14 +43,28 @@ const OBJ = [
       stile(g, 3204, 2606, 'z'); stile(g, 2913, 2736, 'x'); stile(g, 3480, 3018, 'z');
     } },
   { id: '446', name: 'Гараж для автопогрузчика и автомашин', note: 'Контур — по ГП-002/ГП-003; высота 5 м и сторона въезда — условно. Фасад (окна, двери, ворота, цоколь, парапет, водостоки, отделка) — условно: чертежей АР и фото в комплекте нет.', b: g => FAC.B['446'](g) },
-  { id: '501', name: 'Котельная', note: 'Дымовая труба на растяжках (3 анкера) — по ГП-003. Газоход от здания к трубе — условно. Фасад (окна, двери, ворота, цоколь, парапет, водостоки, отделка) — условно: чертежей АР и фото в комплекте нет.', b: g => {
+  { id: '501', name: 'Котельная', note: 'Дымовая труба Ø325×8, H 14 м (верх +14,000), утеплённая, на растяжках (3 анкера — по ГП-003); газоходы Ø273×6 от двух котлов на ≈ +2,48 с компенсаторами — по 501-ТМ-002…006 и ТМ.С (Комплект котельной, стр. 1–7). Положение трубы по ГП-003 совпадает с ТМ-002 (2500 от оси А, 3120 от оси 1) в пределах 0,05 м при совмещении центров. Высота здания ≈ 4,2 м — по контуру на разрезах ТМ-005/006 (листов АР нет). Фасад (окна, двери, цоколь, водостоки, отделка) — условно. Оборудование внутри (котлы ВВ 1035, горелки, насосы, баки) — в паспорте «Котельная 501 (501-ТМ)», в 3D не моделировалось.', b: g => {
       FAC.B['501'](g);
-      { const [hx, hz] = P(4438, 2772), [tx, tz] = P(4438, 2805), L = tz - hz - 0.45; const d = add(g, new THREE.CylinderGeometry(0.26, 0.26, L, 16), MATX.F.pipe, hx, 3.9, hz + L / 2); d.rotation.x = Math.PI / 2; add(g, new THREE.BoxGeometry(0.08, 3.6, 0.08), MATX.F.dark, hx, 1.8, hz + L / 2); }
-      const [x, z] = P(4438, 2805);
-      boxPx(g, 4421, 2788, 4456, 2823, 0.6, mat.concD);
-      add(g, new THREE.CylinderGeometry(0.4, 0.55, 18, 16), mat.steelD, x, 9, z);
+      /* v0.51: по 501-ТМ-002 (план), ТМ-006 (разрез 2-2), ТМ.С поз. К10. Оси здания совмещены по центру контура ГП-003 (контур шире осей на 1,29 × 0,86 м);
+         до v0.51 — труба Ø0,8…1,1 м, H 18 м и один газоход Ø0,52 на 3,9 м (условно) */
+      const [x0, z0] = P(4379, 2664), [x1, z1] = P(4541, 2772), cx = (x0 + x1) / 2, ax1 = cx - 4.5, zA = (z0 + z1) / 2 + 3.0;   // оси 1 и А
+      const [x, z] = P(4438, 2805);                                                    // ось трубы по ГП-003 (ТМ-002: ax1 + 3,12; zA + 2,50)
+      boxPx(g, 4421, 2788, 4456, 2823, 0.7, mat.concD);                                // фундамент 0,7 м (разрез 2-2; форма — условно)
+      const yF = 0.7, yTop = 14.15, rC = 0.21;                                        // верх +14,000 при земле −0,150; Ø325 + утепление (толщина — условно)
+      add(g, new THREE.CylinderGeometry(rC, rC, yTop - yF, 20), MATX.F.pipe, x, (yF + yTop) / 2, z);
+      add(g, new THREE.CylinderGeometry(rC + 0.03, rC + 0.03, 0.12, 20), MATX.F.dark, x, yTop - 0.06, z);   // оголовок
+      add(g, new THREE.CylinderGeometry(rC + 0.05, rC + 0.05, 0.25, 20), MATX.F.dark, x, yF + 0.12, z);     // опорный стакан
+      const yD = 2.63, rD = 0.17, faceS = z1;                                          // ось газоходов: 2630 от низа фундамента; Ø273×6 + утепление
+      for (const xb of [ax1 + 1.886, ax1 + 4.281]) {                                  // котлы К1: 1886 и 4281 от оси 1
+        const sgn = Math.sign(x - xb), L1 = z - faceS, L2 = Math.abs(x - xb) - rC;
+        const d1 = add(g, new THREE.CylinderGeometry(rD, rD, L1, 16), MATX.F.pipe, xb, yD, faceS + L1 / 2); d1.rotation.x = Math.PI / 2;
+        add(g, new THREE.SphereGeometry(rD, 16, 10), MATX.F.pipe, xb, yD, z);
+        const d2 = add(g, new THREE.CylinderGeometry(rD, rD, L2, 16), MATX.F.pipe, xb + sgn * L2 / 2, yD, z); d2.rotation.z = Math.PI / 2;
+        for (const dz of [0.45, 0.6, 0.75]) { const c = add(g, new THREE.TorusGeometry(rD + 0.02, 0.025, 6, 16), MATX.F.dark, xb, yD, faceS + dz); }   // компенсатор
+        add(g, new THREE.BoxGeometry(0.08, yD - 0.1, 0.08), MATX.F.dark, xb, (yD - 0.1) / 2, faceS + L1 * 0.7);   // стойка под газоход (условно)
+      }
       const pts = [];
-      for (const [ax, ay] of [[4544, 2785], [4417, 2911], [4340, 2760]]) { const [gx, gz] = P(ax, ay); pts.push(new THREE.Vector3(x, 14, z), new THREE.Vector3(gx, 0, gz)); boxPx(g, ax - 8, ay - 8, ax + 8, ay + 8, 0.4, mat.concD); }
+      for (const [ax, ay] of [[4544, 2785], [4417, 2911], [4340, 2760]]) { const [gx, gz] = P(ax, ay); pts.push(new THREE.Vector3(x, 13.5, z), new THREE.Vector3(gx, 0, gz)); boxPx(g, ax - 8, ay - 8, ax + 8, ay + 8, 0.4, mat.concD); }
       g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x555555 })));
     } },
   { id: '644', name: 'Насосная станция пожаротушения', fire: 1, note: 'Г-образный контур — по ГП-003. Высота 5 м — условно. Фасад (окна, двери, ворота, цоколь, парапет, водостоки, отделка) — условно: чертежей АР и фото в комплекте нет.', b: g => FAC.B['644'](g) },

@@ -127,7 +127,7 @@ const DX3 = (() => {
       const B = Bk(), yR = 1.1, x0 = xc - LX / 2, x1 = xc + LX / 2, z0 = zc - LZ / 2, z1 = zc + LZ / 2;
       // навес: колонны по периметру площадки (шаг ≈6,7 × 7,85 м), односкатная кровля — условно (лист плана пуст)
       const COL = []; for (const x of [x0, xc, x1]) for (const z of [z0, z1]) COL.push([x, z]);
-      const hN = 4.6, hS = 4.1;                                       // скат на юг, к пути
+      const hN = 4.85 - yR, hS = 4.85 + 0.5 - yR;                     // v0.51: по 196-ПТ-003-0, разрез 1-1 (подложка): верх +4,850 у оси Г (север), к пути выше ≈ на 0,5 м — обмер листа; было 4,6 / 4,1 над рампой, скат на юг (условно)
       const hAtZ = z => yR + hN + (hS - hN) * (z - z0) / (z1 - z0);
       for (const [x, z] of COL) {
         B.add(mat.steelD, box(0.2, hAtZ(z) - yR, 0.2, x, (hAtZ(z) + yR) / 2, z));
@@ -137,7 +137,7 @@ const DX3 = (() => {
       for (const z of [z0, z1]) B.add(mat.steelD, box(LX + 0.3, 0.22, 0.14, xc, hAtZ(z) - 0.11, z));
       for (let k = 0; k <= 6; k++) { const z = z0 - 0.3 + (LZ + 0.6) * k / 6; B.add(mat.steel, box(LX + 0.6, 0.1, 0.07, xc, hAtZ(z) + 0.32, z)); }
       const rf = new THREE.BoxGeometry(LX + 0.9, 0.05, Math.hypot(LZ + 1.2, hS - hN));
-      rf.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.atan2(hN - hS, LZ + 1.2)));   // скат на юг (+z ниже)
+      rf.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.atan2(hN - hS, LZ + 1.2)));   // скат на север (+z выше — к пути)
       rf.translate(xc, (hAtZ(z0) + hAtZ(z1)) / 2 + 0.4, zc); B.add(MT.roofS, rf);
       // сетчатое ограждение 2-50-3,0 по периметру площадки, высота 2,0 м — условно; проёмы: ворота к пути, выход на пандус
       const hF = 2.0, GATE = [{ side: 'S', a: xc - 1.6, b: xc + 1.6 }, { side: 'E', a: zc - 1.4, b: zc + 1.4 }];

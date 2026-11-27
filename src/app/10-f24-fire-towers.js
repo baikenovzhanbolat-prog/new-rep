@@ -387,6 +387,41 @@ const F24 = (() => {
     const mf = meshOf(bf, GK.MAT.steel, oG, false); rgsG.add(mf); lod.push(mf);
   }
 
+  /* =========================== 3а. СТАНЦИЯ НАЛИВА 186: ГПС-600 × 2 ПО 186-ПТ-002-0 (v0.51) ===========================
+     5632.29-186-ПТ-001-0, -002-0 «План с сетью В10», ПТ.С-001-0 (Комплект ПТ-2.pdf, стр. 5–7). Оси станции — по 186-ТХ-002-0 (модуль F25):
+     X — от оси 1 на восток, Y — от оси В на юг. Стояк Ø89×4 — в 200 мм за осью 2 (у колонны 2/В), от подземного ввода до ≈ +7,36;
+     разводка под кровлей в 120 мм от оси В: Ø89×4 2,8 м → тройник (поз. 8) → ГПС-600 у X ≈ 5,9 (+7,300*) → переход 89→76 (поз. 9) →
+     Ø76×4 → ГПС-600 у X ≈ 3,6 (+6,900*); генераторы наклонены на 30° к автоцистерне (разрезы 2-2, 3-3). Отметки со «*» — по листу ориентировочные;
+     подвески и хомуты (опоры поз. 10, 11) — условно (КМ нет). Подземная часть ввода (89×4, 3 м, изоляция «весьма усиленная») — до границы 610-ПТ. */
+  const st186G = new THREE.Group(); st186G.name = 'F24: ГПС-600 станции 186'; scene.add(st186G);
+  function build186() {
+    if (typeof F25 === 'undefined') return;
+    const X = x => F25.sx(x), Z = y => F25.sz(y), H = F25.H186, Yp = 0.12, R89 = 0.0445, R76 = 0.038;
+    const yAt = x => H + 7.30 + (x - 5.9) * (0.40 / 2.3);              // ось разводки по скату (+6,900* у X 3,6 … +7,300* у X 5,9)
+    const yTop = H + 7.36, xR = 9.2, xT = 6.2, xG = [5.9, 3.6];
+    const bp = GK.builder(), bs = GK.builder(), bg = GK.builder();
+    const yG0 = hAt(X(xR), Z(Yp));
+    bp.cyl(V(X(xR), yG0 - 0.35, Z(Yp)), V(X(xR), yTop, Z(Yp)), R89, 0, 14);                       // стояк Ø89×4
+    bp.cyl(V(X(xR), yTop, Z(Yp)), V(X(xT), yAt(xT) + 0.02, Z(Yp)), R89, 0, 14);                   // Ø89×4 под кровлей
+    bp.cyl(V(X(xT), yAt(xT), Z(Yp)), V(X(xG[1]), yAt(xG[1]), Z(Yp)), R76, 0, 14);                 // Ø76×4 после перехода
+    bp.cyl(V(X(xR), yTop - R89, Z(Yp)), V(X(xR), yTop + R89, Z(Yp)), R89 + 0.006, 0, 12);          // отвод 90° (поз. 6)
+    xG.forEach((xg, i) => {
+      const y = yAt(xg), r = i ? R76 : R89, d = new THREE.Vector3(0, 0, 1);
+      const p = V(X(xg), y - 0.42, Z(Yp + 0.32));
+      const dd = gps(bg, p, d, 30 * Math.PI / 180);
+      const inlet = p.clone().addScaledVector(dd, -0.12);
+      bp.cyl(V(X(xg), y, Z(Yp)), V(X(xg), inlet.y + 0.06, Z(Yp)), R76, 0, 12);                  // отвод (поз. 7) и опуск к ГМ-70
+      bp.cyl(V(X(xg), inlet.y + 0.06, Z(Yp)), inlet, R76, 0, 12);
+      bs.ring(V(X(xg), y, Z(Yp)), new THREE.Vector3(1, 0, 0), r + 0.006, 0.006, C.galv, 12);
+    });
+    for (const x of [8.4, 7.0, 5.0, 4.2]) { const y = yAt(Math.min(x, 6.2)) + (x > 6.2 ? (yTop - yAt(6.2)) * (x - 6.2) / 3.0 : 0); bs.cyl(V(X(x), y + 0.05, Z(Yp)), V(X(x), y + 0.3, Z(Yp)), 0.008, C.str, 6); bs.ring(V(X(x), y, Z(Yp)), new THREE.Vector3(1, 0, 0), 0.05, 0.006, C.galv, 12); }   // подвески к ригелю (условно)
+    for (const h of [0.65, 3.33, 6.01]) bs.bar(V(X(9.0) + 0.12, H + h, Z(Yp)), V(X(xR), H + h, Z(Yp)), 0.04, 0.04, C.str);   // хомуты стояка к колонне 2/В (опоры поз. 11, условно)
+    const oP = { id: 'В10 (186)', net: 1, f24: 'b10', name: 'Пенопровод В10 станции налива 186: стояк Ø89×4, разводка Ø89/Ø76 под кровлей', note: '186-ПТ-002-0 «План с сетью В10», разрез 1-1; 186-ПТ.С-001-0: труба 89×4 — 11 м (и 3 м подземно), 76×4 — 2 м, отводы 90-89 × 4, 90-76 × 1, тройник 89 × 1, переход 89→76 × 1, опоры 89 × 5, 76 × 1. Подвод от кольцевой сети В10 — подземно (граница — 610-ПТ). Подвески и хомуты — условно (КМ нет).' };
+    const oG = { id: 'ГПС-600 (186)', net: 1, f24: 'gps', name: 'ГПС-600 над автоцистерной — 2 шт. (станция налива 186)', note: '186-ПТ-001-0: пожаротушение — раствор пенообразователя на стационарные ГПС-600 над автоцистерной; 0,08 л/(м²·с), площадь 75 м² → 6,0 л/с; при работе 2 ГПС-600 — 12 л/с; время тушения 10 мин; охлаждение площадки и оборудования — от пожарных гидрантов. 186-ПТ.С-001-0: ГПС-600 — 2 шт. (Армавирский опытный машзавод, 4,5 кг), головки ГМ-70 — 2, патрубки 76 L 150 — 2. Положение и наклон 30° — по 186-ПТ-002-0 (разрезы 2-2, 3-3); форма генератора — по габариту знака (условно).' };
+    st186G.add(meshOf(bp, pipeMat(), oP)); st186G.add(meshOf(bg, GK.MAT.paint, oG));
+    const mf = meshOf(bs, GK.MAT.steel, oP, false); st186G.add(mf); lod.push(mf);
+  }
+
   /* =========================== 4. АНИМАЦИЯ, КАРТОЧКИ =========================== */
   let tPrev = 0, cardFor = null, cardT = 0, SPEED = 1;   // SPEED — ускорение анимации (для проверки)
   function tick(now) {
@@ -464,11 +499,11 @@ const F24 = (() => {
     rgs: () => { const x = P(3056.5, 0)[0], y = hAt(x, 8); flyTo([x + 7, y + 9, 21], [x - 1, y + 3, 9], 0.9); }
   };
   function craneCmd(k, v) { if (k === 'hook') { if (!crane.pend) crane.thy = v === 'up' ? CR.yHook : hookLow(); } else craneMove(k === 'bridge' ? 'tz' : 'thx', v); }
-  function late() { const n0 = lod.length; buildHall(); buildRGS(); FAST_LOD.push(...lod.slice(n0)); }
+  function late() { const n0 = lod.length; buildHall(); buildRGS(); build186(); FAST_LOD.push(...lod.slice(n0)); }
   /* контур для проверки связности сетей (PNET): прежний габарит вышки ±1,8 м — чтобы классификация концов сетей
      у вышек (в т. ч. К1) осталась как в v0.23; привязка концов труб к сооружениям по габариту — эвристика PNET */
   const fp = (px, py) => { const [x, z] = P(px, py); return new THREE.Box3(new THREE.Vector3(x - 1.8, -1, z - 1.8), new THREE.Vector3(x + 1.8, 13, z + 1.8)); };
-  const api = { tower, late, tick, lod, VIEWS, craneCmd, hookLow, fp, cardHTML, bindCard, aimTower, setWater, towers, crane, CR, hall, rgsG, jetG, set speed(v) { SPEED = +v || 1; }, get state() { return { towers: Object.fromEntries(Object.entries(towers).map(([k, T]) => [k, { yaw: T.yaw, pitch: T.pitch, aim: T.aim, water: T.water, jet: T.jet ? { range: T.jet.range, end: T.jet.end.toArray() } : null }])), crane: { bz: crane.bz, hx: crane.hx, hy: crane.hy } }; } };
+  const api = { tower, late, tick, lod, VIEWS, craneCmd, hookLow, fp, cardHTML, bindCard, aimTower, setWater, towers, crane, CR, hall, rgsG, st186G, jetG, set speed(v) { SPEED = +v || 1; }, get state() { return { towers: Object.fromEntries(Object.entries(towers).map(([k, T]) => [k, { yaw: T.yaw, pitch: T.pitch, aim: T.aim, water: T.water, jet: T.jet ? { range: T.jet.range, end: T.jet.end.toArray() } : null }])), crane: { bz: crane.bz, hx: crane.hx, hy: crane.hy } }; } };
   window.__F24 = api;
   return api;
 })();
