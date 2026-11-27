@@ -19,7 +19,6 @@ const HYDX = (() => {
   const fmt = (x, d = 2) => (+x).toFixed(d).replace('.', ',').replace('-', '−');
   const FLC = { L: 'DTL', Z: 'DTZ', B: 'B' };
   const cfg = { T: 20 };
-  const objOf = id => OBJ.find(o => o.id === id);
 
   /* ---------- 1. Арматура: автомат хода ---------- */
   const vKind = id => {
@@ -209,7 +208,7 @@ const HYDX = (() => {
   /* ---------- 4. Гидравлика: дерево маршрута по физическим трубам ---------- */
   const NVK = { RVS1: 'RVS1', RVS2: 'RVS2', RVS3: 'RVS3', RGSZ1: 'RGSZ1', RGSZ2: 'RGSZ2', RGSB1: 'RGSB1', RGSB2: 'RGSB2',
     USN1: 'VC1', UPVS: 'VC1', USN2: 'VC2', USN3: 'VC3', UNZH: 'VC3', ASN: 'AC', KOT: 'KOT_T', DES: 'DES_T', LSC: 'LSC_X', TRK: 'TRK_X' };
-  const CAR = { R: 1.5, AX: 2.55 };          // котёл ВЦ в 3D (модель вагона — DEMONSTRATION ONLY, тип вагона не указан)
+  const CAR = SIMGEO.CAR;          // котёл ВЦ (модель вагона — DEMONSTRATION ONLY, тип вагона не указан)
   const carLevel = v => { const cap = v.cap || 60, Lq = cap / (Math.PI * CAR.R * CAR.R), R = CAR.R, seg = h => Lq * (R * R * Math.acos((R - h) / R) - (R - h) * Math.sqrt(Math.max(0, 2 * R * h - h * h)));
     const vol = Math.min(cap, Math.max(0, v.vol)); let a = 0, b = 2 * R; for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (seg(m) < vol) a = m; else b = m; } return (a + b) / 2; };
   const BSRC = {};
@@ -218,27 +217,25 @@ const HYDX = (() => {
     const N = L.N[k], v = PS.V[NVK[k]];
     if (!N) return null;
     if (/^RVS\d$/.test(k)) {
-      const o = objOf(N.obj), useM = o.gM && o.gM.visible, yb = o.g.position.y + (useM ? (RVSD.on(o) ? RVSD.Y_BOT : 0.02) : 0.45);
-      BSRC[k] = 'днище РВС по 3D-модели + уровень (модель)';
-      return { kind: 'tank', z: yb + PS.level(v) };
+      BSRC[k] = 'днище РВС по размерам РВС-1000 + уровень (модель)';
+      return { kind: 'tank', z: SIMGEO.rvsBottom(N.obj) + PS.level(v) };
     }
     if (/^RGS/.test(k)) {
-      const o = objOf(Math.abs(N.p[0] - L.N.RGSB1.p[0]) < 5.5 ? '116.1–2' : '116.3–4'), useM = o.gM && o.gM.visible, det = useM && RGSD.on(o);
-      const ax = o.g.position.y + (det ? RGSD.AXIS : useM ? 2.68 : 2.32);
-      BSRC[k] = 'ось РГС-75 по 3D-модели − R + уровень (модель)';
+      const ax = SIMGEO.rgsAxis(Math.abs(N.p[0] - L.N.RGSB1.p[0]) < 5.5 ? '116.1–2' : '116.3–4');
+      BSRC[k] = 'ось РГС-75 по размерам модели − R + уровень (модель)';
       return { kind: 'tank', z: ax - 1.62 + PS.level(v) };
     }
     if (/^USN\d$|^UPVS$|^UNZH$/.test(k)) {
-      const cp = objOf('177').gS.userData.carPos[v.est], bot = cp[1] + CAR.AX - CAR.R, h = carLevel(v);
-      BSRC[k] = 'котёл ВЦ по 3D-модели (тип вагона не указан — условно) + уровень (модель)';
+      const bot = SIMGEO.carBottom(v.est), h = carLevel(v);
+      BSRC[k] = 'котёл ВЦ по модели вагона (тип вагона не указан — условно) + уровень (модель)';
       return { kind: 'tank', z: k === 'UNZH' ? Math.max(bot + h, bot + 0.2) : bot + h };   // налив: наливная труба до дна котла
     }
     if (k === 'ASN') {
-      const y0 = hAt(-56.4, -6.5); BSRC[k] = 'автоцистерна: низ котла +1,2 м от земли, высота 1,9 м — условно';
+      const y0 = SIMGEO.ground(-56.4, -6.5); BSRC[k] = 'автоцистерна: низ котла +1,2 м от земли, высота 1,9 м — условно';
       return { kind: 'tank', z: Math.max(y0 + 1.2 + 1.9 * Math.min(1, v.vol / (v.cap || 20)), y0 + 1.4) };
     }
-    if (k === 'KOT' || k === 'DES') { BSRC[k] = 'расходная ёмкость: отметка не указана в документах — принято +2,0 м от земли (условно)'; return { kind: 'free', z: hAt(N.p[0], N.p[1]) + 2.0 }; }
-    if (k === 'TRK') { BSRC[k] = 'раздаточный кран ТРК: излив +1,0 м от земли (условно)'; return { kind: 'free', z: hAt(N.p[0], N.p[1]) + 1.0 }; }
+    if (k === 'KOT' || k === 'DES') { BSRC[k] = 'расходная ёмкость: отметка не указана в документах — принято +2,0 м от земли (условно)'; return { kind: 'free', z: SIMGEO.ground(N.p[0], N.p[1]) + 2.0 }; }
+    if (k === 'TRK') { BSRC[k] = 'раздаточный кран ТРК: излив +1,0 м от земли (условно)'; return { kind: 'free', z: SIMGEO.ground(N.p[0], N.p[1]) + 1.0 }; }
     return null;   // ЛСЦ: давление в существующем трубопроводе неизвестно
   }
   const DEV = {   // местные сопротивления устройств у ёмкостей (по составу узлов АК-004; коэффициенты — справочные)

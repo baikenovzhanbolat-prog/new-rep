@@ -107,6 +107,7 @@ for (const o of OBJ) {
   const bb0 = new THREE.Box3().setFromObject(gS), cx = (bb0.min.x + bb0.max.x) / 2, cz = (bb0.min.z + bb0.max.z) / 2;
   if (['427', '431', '799'].includes(o.id)) gS.children.forEach(m => m.position.y += hAt(m.position.x, m.position.z));
   else if (!o.fixed) g.position.y = hAt(cx, cz);
+  o.baseY = g.position.y;   // посадка на рельеф — для расчёта (SIMGEO), чтобы не читать положение из сцены
   o.elev = o.id.startsWith('654') ? '300.38 (верх обсыпки)' : o.id.startsWith('ПС') ? null : (H0 + (o.elevY !== undefined ? o.elevY : o.fixed && o.id !== '177' ? 0 : hAt(cx, cz))).toFixed(2);   // v0.17: у 177 — верх площадки
   setAnchor(o);
   const el = document.createElement('div');

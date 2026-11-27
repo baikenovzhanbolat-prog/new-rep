@@ -13,6 +13,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Модульные тесты (гидравлика, логика ТП)
+        run: npm run test:unit
       - name: Сверка эталонной сборки с эталоном
         run: npm run verify
       - name: Сборка Vite (рабочий файл) и эталонная сборка
@@ -22,6 +24,8 @@ jobs:
           npm i --no-save playwright@1.49.1
           npx playwright install --with-deps chromium
           node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html
+      - name: Расчёт не зависит от отображения
+        run: npm run test:sim
       - name: Отпечатки сцены и данных — Vite-сборка против эталонной
         run: npm run test:fp
       - name: Собранный HTML

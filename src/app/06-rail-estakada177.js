@@ -93,7 +93,7 @@ function estakada177(g) {
   // цистерны: на время загрузки модели — упрощённые
   const carG = new THREE.Group(); carG.name = 'carsSimple'; g.add(carG);
   cars.forEach(c => tankCar(carG, c, TZ, RH - 0.5));
-  g.userData.cars = carG; g.userData.carPos = cars.map(c => [c, RH, TZ]);
+  g.userData.cars = carG; g.userData.carPos = EST177.carPos = cars.map(c => [c, RH, TZ]);   // EST177.carPos — для расчёта (SIMGEO), не из сцены
   // v0.22: детальная модель вагона-цистерны (TCAR, типовая — APPROXIMATE); прежние модели — слой «Вагоны-цистерны: прежние модели»
   carG.visible = false; TCAR.old.push(carG);
   const carD = new THREE.Group(); carD.name = 'carsDetail'; g.add(carD); TCAR.build(carD, cars, RH, TZ); TCAR.groups.push(carD);

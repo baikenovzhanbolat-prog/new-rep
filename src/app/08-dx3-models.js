@@ -38,7 +38,6 @@ const DX3 = (() => {
     const ROLL = []; for (let k = 0; k < 13; k++) ROLL.push(xTen - 4.0 - 6.0 * k);   // 13 пар роликов, шаг 6 м (26 шт.)
     const ySl = RAIL53 - TRK.RAIL_H - TRK.PAD, yRope = ySl + 0.13, dzR = [-0.16, 0.16];   // [основной, вспомогательный]
     let center = [xw, 0, zT];
-    const old = [];
     function build(g, o) {
       const y0 = hAt(xw, zT), B = Bk();
       center = [xw, y0 + 1.2, zT];
@@ -103,18 +102,13 @@ const DX3 = (() => {
       B.add(MT.winch, boxAB(V(xTen + 0.05, yRope, zT), V(xTen + 0.7, yRope, zT), 0.08, 0.08));       // натяжной винт (условно)
       B.add(mat.yellow, box(0.12, 0.25, 0.7, xTen + 0.72, ySl + 0.2, zT));
       flush(B, g, o);
-      // прежнее условное изображение (v0.10) — удаляется purgeOld. Не убирать без проверки: пока ящик в сцене (до purgeOld),
-      // он влияет на итоговое состояние модели (уровни, положения вагонов, поза АСН) — найдено отпечатком в v0.43, причина не выяснена
-      const go = new THREE.Group(); go.name = '901: прежнее условное изображение (до v0.21)';
-      boxPx(go, 2213, 3546, 2264, 3607, 0.8, mat.yellow, hAt(...P(2238.5, 3576.5)) - 0.05);
-      g.add(go); old.push(go);
     }
     /* путь № 53: участок восточнее упора (западнее — прежний вариант, убран в v0.43) */
     function tracks53() {
       const pxStop = 3400 + (xStop - 1.0) * 15.75;                    // рельсы заканчиваются ≈1 м за упором
       track(TRACK_Y, pxStop, 2785, RAIL53);
     }
-    return { build, tracks53, old, center: () => center, anchorXZ: [xw, zT], xStop, xTen, ROLL, zT };
+    return { build, tracks53, center: () => center, anchorXZ: [xw, zT], xStop, xTen, ROLL, zT };
   })();
   /* ---------------- 196 ---------------- */
   const S196 = (() => {
