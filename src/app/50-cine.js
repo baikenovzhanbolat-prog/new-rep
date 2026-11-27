@@ -1025,7 +1025,7 @@ const CINE = (() => {
   const XL = 2, XCATS = ['pv', 'prp', 'water', 'kpd', 'k1', 'heat', 'tech', 'cab'];   // трубопроводы и кабели; колодцы, подземные ёмкости и грунт — не показываются
   function renderX(cam) {
     const ug = UGN.root, h = hemi();
-    const keep = { bg: scene.background, sunI: sun.intensity, hI: h ? h.intensity : 0, au: renderer.shadowMap.autoUpdate, ugv: ug.visible, cats: {}, cc: renderer.getClearColor(new THREE.Color()), ca: renderer.getClearAlpha() };
+    const keep = { bg: scene.background, sunI: sun.intensity, hI: h ? h.intensity : 0, au: renderer.shadowMap.autoUpdate, nu: renderer.shadowMap.needsUpdate, ugv: ug.visible, cats: {}, cc: renderer.getClearColor(new THREE.Color()), ca: renderer.getClearAlpha() };
     for (const k in UGN.cat) { keep.cats[k] = UGN.cat[k].visible; UGN.cat[k].visible = XCATS.includes(k); }
     const em = new Map();   // сети — со свечением цвета категории (на время прохода)
     for (const k of XCATS) if (UGN.cat[k]) UGN.cat[k].traverse(o => { const m = o.isMesh && o.material; if (m && m.emissive && !em.has(m)) { em.set(m, [m.emissive.clone(), m.emissiveIntensity]); m.emissive.copy(m.color).multiplyScalar(0.55); m.emissiveIntensity = 1; } });
@@ -1038,7 +1038,7 @@ const CINE = (() => {
     renderer.setRenderTarget(rtX); renderer.setClearColor(0x000000, 0); renderer.clear(); renderer.render(scene, cam);
     cam.layers.set(0);
     renderer.setClearColor(keep.cc, keep.ca);
-    scene.background = keep.bg; sun.intensity = keep.sunI; if (h) h.intensity = keep.hI; renderer.shadowMap.autoUpdate = keep.au;
+    scene.background = keep.bg; sun.intensity = keep.sunI; if (h) h.intensity = keep.hI; renderer.shadowMap.autoUpdate = keep.au; renderer.shadowMap.needsUpdate = keep.nu;   // v0.45: тень обновляется по требованию (VIS)
     for (const k in keep.cats) UGN.cat[k].visible = keep.cats[k];
     for (const [m, [c, i]] of em) { m.emissive.copy(c); m.emissiveIntensity = i; }
     ug.visible = keep.ugv;

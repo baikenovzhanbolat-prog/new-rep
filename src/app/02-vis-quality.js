@@ -62,10 +62,16 @@ const VIS = (() => {
     if (sun.shadow.mapSize.x !== q.sm) { sun.shadow.mapSize.set(q.sm, q.sm); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
     try { localStorage.setItem('ctrQuality', k); } catch (e) { }
     if (hooks.thin) hooks.thin(k === 'low');
+    renderer.shadowMap.needsUpdate = true;
   }
   setQuality(qk);
-  /* тени: область следует за точкой взгляда; размер — по расстоянию камеры; привязка к текселю (без мерцания) */
-  const _t = new THREE.Vector3();
+  /* тени: область следует за точкой взгляда; размер — по расстоянию камеры; привязка к текселю (без мерцания).
+     v0.45: карта теней пересчитывается не каждый кадр (проход теней — ≈ 700 вызовов отрисовки из 1900): при движении камеры
+     или солнца — каждый кадр, иначе — раз в SH_EVERY кадров (подвижные механизмы: насосы, вагоны, АСН, кран). shadowDirty() — сразу. */
+  const _t = new THREE.Vector3(), _sig = new Float64Array(10), SH_EVERY = 4;
+  let shFrame = 0;
+  renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+  function shadowDirty() { renderer.shadowMap.needsUpdate = true; }
   function tick() {
     sky.position.copy(camera.position);
     const tg = controls.target, d = camera.position.distanceTo(tg), ext = THREE.MathUtils.clamp(d * 1.5, 16, 135);
@@ -75,8 +81,11 @@ const VIS = (() => {
     _t.set(Math.round(tg.x / tx) * tx, 0, Math.round(tg.z / tx) * tx);
     sun.target.position.copy(_t); sun.position.copy(_t).addScaledVector(SUN, 420);
     sun.target.updateMatrixWorld();
+    const s = [camera.position.x, camera.position.y, camera.position.z, tg.x, tg.y, tg.z, sun.position.x, sun.position.y, sun.position.z, sc.right];
+    let moved = false; for (let i = 0; i < 10; i++) if (Math.abs(s[i] - _sig[i]) > 1e-4) { moved = true; _sig[i] = s[i]; }
+    if (moved || ++shFrame >= SH_EVERY) { shFrame = 0; renderer.shadowMap.needsUpdate = true; }
   }
-  return { tick, setQuality, get quality() { return qk; }, QS, sky, SUN, hooks };
+  return { tick, shadowDirty, setQuality, get quality() { return qk; }, QS, sky, SUN, hooks };
 })();
 
 

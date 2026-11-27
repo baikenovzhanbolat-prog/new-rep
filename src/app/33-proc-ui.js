@@ -225,10 +225,10 @@ function procTick(t) {
   const s = 1 + 0.35 * Math.sin(t * 0.008);
   for (const h of procPulse) h.scale.setScalar(s);
   if (!labelsEl.classList.contains('off')) for (const l of PROC_LBL) {
-    if (!l.grp.visible) { l.el.style.display = 'none'; continue; }
+    if (!l.grp.visible) { lblSet(l.el, 'none'); continue; }
     v.copy(l.pos).project(camera);
-    if (v.z > 1) { l.el.style.display = 'none'; continue; }
-    l.el.style.display = ''; l.el.style.transform = `translate(${(v.x + 1) / 2 * innerWidth}px,${(1 - v.y) / 2 * innerHeight}px) translate(-50%,-100%)`;
+    if (v.z > 1) { lblSet(l.el, 'none'); continue; }
+    lblSet(l.el, '', `translate(${(v.x + 1) / 2 * innerWidth}px,${(1 - v.y) / 2 * innerHeight}px) translate(-50%,-100%)`);
   }
 }
 

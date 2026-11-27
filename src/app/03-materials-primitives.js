@@ -221,6 +221,29 @@ function trkMerge(geos) {   // объединение геометрий одн�
   r.setAttribute('position', new THREE.BufferAttribute(pos, 3)); r.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); r.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   r.setIndex(new THREE.BufferAttribute(idx, 1)); return r;
 }
+/* v0.45: объединение статичных мешей группы (одинаковые материал, тени, порядок отрисовки) — меньше вызовов отрисовки.
+   Только для объектов, чьи меши не меняются после постройки (стены, ограждение): положение запекается в геометрию.
+   InstancedMesh и меши с особыми данными выбора (userData.pick) не трогаются. */
+function mergeStatic(root, pick) {
+  root.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(root.matrixWorld).invert(), m4 = new THREE.Matrix4(), groups = new Map();
+  root.traverse(m => {
+    if (!m.isMesh || m.isInstancedMesh || Array.isArray(m.material) || !m.visible || m.userData.pick) return;
+    const k = m.material.uuid + '|' + m.castShadow + '|' + m.receiveShadow + '|' + m.renderOrder + '|' + !!m.userData.noCut;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(m);
+  });
+  let n = 0;
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const me = new THREE.Mesh(trkMerge(list.map(m => { m4.multiplyMatrices(inv, m.matrixWorld); return m.geometry.clone().applyMatrix4(m4); })), list[0].material);
+    me.castShadow = list[0].castShadow; me.receiveShadow = list[0].receiveShadow; me.renderOrder = list[0].renderOrder;
+    Object.assign(me.userData, list[0].userData); me.name = 'объединено: ' + list.length;
+    for (const m of list) { m.parent.remove(m); const i = pick.indexOf(m); if (i >= 0) pick.splice(i, 1); }
+    root.add(me); pick.push(me); n += list.length - 1;
+  }
+  return n;   // на сколько стало меньше мешей
+}
 function track(pyAxis, px0, px1, railY = 0, opt = {}) {
   const [x0, z] = P(px0, pyAxis), [x1] = P(px1, pyAxis), L = x1 - x0, xc = (x0 + x1) / 2;
   const yTop = railY - TRK.RAIL_H - TRK.PAD, yBot = Math.min(railY - 1.25, -1.05);   // верх шпал = верх балласта; низ призмы — ниже земли

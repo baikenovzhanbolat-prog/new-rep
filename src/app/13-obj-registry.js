@@ -93,6 +93,11 @@ const MDL = {
 };
 
 const labelsEl = document.getElementById('labels');
+/* v0.45: подписи — запись в DOM только при изменении (иначе 100+ подписей пересчитывают стили каждый кадр) */
+function lblSet(el, disp, tf) {
+  if (el._d !== disp) { el._d = disp; el.style.display = disp; }
+  if (tf !== undefined && el._t !== tf) { el._t = tf; el.style.transform = tf; }
+}
 function setAnchor(o) {
   const src = o.gM && o.gM.visible ? o.gM : o.gS;
   const bb = new THREE.Box3().setFromObject(src);
@@ -105,7 +110,7 @@ for (const o of OBJ) {
   gS.traverse(m => { if (m.isMesh) { m.userData.o = o; pickables.push(m); } });
   // посадка на рельеф: стены/ограждение — по каждому звену, остальное — по центру объекта
   const bb0 = new THREE.Box3().setFromObject(gS), cx = (bb0.min.x + bb0.max.x) / 2, cz = (bb0.min.z + bb0.max.z) / 2;
-  if (['427', '431', '799'].includes(o.id)) gS.children.forEach(m => m.position.y += hAt(m.position.x, m.position.z));
+  if (['427', '431', '799'].includes(o.id)) { gS.children.forEach(m => m.position.y += hAt(m.position.x, m.position.z)); mergeStatic(gS, pickables); }   // v0.45: отрезки стен — одним мешем
   else if (!o.fixed) g.position.y = hAt(cx, cz);
   o.baseY = g.position.y;   // посадка на рельеф — для расчёта (SIMGEO), чтобы не читать положение из сцены
   o.elev = o.id.startsWith('654') ? '300.38 (верх обсыпки)' : o.id.startsWith('ПС') ? null : (H0 + (o.elevY !== undefined ? o.elevY : o.fixed && o.id !== '177' ? 0 : hAt(cx, cz))).toFixed(2);   // v0.17: у 177 — верх площадки
