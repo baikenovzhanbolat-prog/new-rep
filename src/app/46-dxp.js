@@ -102,7 +102,8 @@ const DXP = (() => {
     const F = D.FILES[d.f];
     return `<div class="doc"><div class="cd">${esc(d.code)}</div><div>${esc(d.n)}</div>` +
       `<div class="pg">${d.pages.map(p => `<button data-pg="${d.f}-${p}" data-dk="${esc(k)}">${F.name}, стр. ${p}</button>`).join('')}</div>` +
-      (d.note ? `<div class="nt2">${esc(d.note)}</div>` : '') + `</div>`;
+      (d.note ? `<div class="nt2">${esc(d.note)}</div>` : '') +
+      (F.noEmb ? `<div class="nt2">Страницы этого файла в HTML не встроены: PDF открывается кнопкой «PDF», если файл положен в папку docs/ рядом с HTML</div>` : '') + `</div>`;
   }
   function docListHTML() {
     let h = `<div class="warn">Страницы встроены в файл (WebP, 4 тона) и открываются без интернета. Полные PDF — в папке <b>docs/</b> пакета рядом с HTML (кнопка «PDF» в просмотрщике).</div>`;
@@ -117,7 +118,7 @@ const DXP = (() => {
     `<div><i>Документ:</i> ${esc(f.src)}</div><div><i>Модель:</i> ${esc(f.model)}</div><div class="a">${esc(f.act)}</div></div>`;
   function chkHTML() {
     const n = k => D.FINDINGS.filter(f => f.kind === k).length;
-    let h = `<div class="warn">Сверка 222.pdf / 333.pdf, 444.pdf, 55555.pdf и Резервуар 1.pdf с моделью: закрыто пунктов реестра — ${n('closed')}, подтверждено — ${n('confirmed')}, частично — ${n('partial')}, расхождений — ${n('conflict')}, открыто — ${n('open')}. Логика ТП и маршруты М1–М9 не менялись: расхождения по логике требуют вашего решения.</div>`;
+    let h = `<div class="warn">Сверка 222.pdf / 333.pdf, 444.pdf, 55555.pdf, Резервуар 1.pdf и комплекта ПТ с моделью: закрыто пунктов реестра — ${n('closed')}, подтверждено — ${n('confirmed')}, частично — ${n('partial')}, расхождений — ${n('conflict')}, открыто — ${n('open')}. Логика ТП и маршруты М1–М9 не менялись: расхождения по логике требуют вашего решения.</div>`;
     for (const k of ['conflict', 'open', 'closed', 'partial', 'confirmed', 'note']) {
       const L = D.FINDINGS.filter(f => f.kind === k); if (!L.length) continue;
       h += `<h5>${KIND[k]} (${L.length})</h5>` + L.map(fdHTML).join('');
