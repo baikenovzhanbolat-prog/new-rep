@@ -49,7 +49,8 @@ async function run(browser, file, idx) {
   });
   texts.start = await uiText();
   fs.mkdirSync(SHOTS, { recursive: true });
-  await page.screenshot({ path: path.join(SHOTS, `${idx}-start.png`) });
+  // снимок — для отчёта, не для проверки: в программном рендере на раннере CI кадр идёт десятки секунд (стандартных 30 с не хватает)
+  await page.screenshot({ path: path.join(SHOTS, `${idx}-start.png`), timeout: 180000 }).catch(e => console.warn('снимок не сделан: ' + e.message.split('\n')[0]));
   for (const id of PANELS) {
     // клик через DOM: в программном рендере кадр идёт секунды, обычный клик Playwright ждёт «стабильности»
     await page.evaluate(id => document.getElementById(id)?.click(), id);
