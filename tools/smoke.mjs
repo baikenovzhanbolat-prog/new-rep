@@ -27,7 +27,7 @@ async function run(browser, file, idx) {
   if (!fs.existsSync(file)) throw new Error('нет файла ' + file);
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   // одинаковая «случайность» во всех прогонах — для сравнения сборок
-  await page.addInitScript(() => { let s = 12345; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); });
+  await page.addInitScript(() => { let a = 12345; Math.random = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; });   // mulberry32
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });

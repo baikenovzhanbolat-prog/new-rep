@@ -13,8 +13,8 @@
  *  - данные после всех правок: NETS, PH, UG_DATA, PHX_DATA, PROC, WELLS_DATA, GP5V, PIPEREG, реестр объектов OBJ;
  *  - журналы модулей F24…F34 (.log), число объектов выбора (pickables).
  * Анимированные свойства (меняются между двумя снимками с интервалом 1,5 с) помечаются «~» и не сравниваются.
- * Порядок объектов не важен (записи сортируются), важен только итоговый набор.
- * Math.random детерминирован (одинаковое зерно), чтобы декоративные объекты совпадали.
+ * Порядок объектов не важен (записи сортируются), важен только итоговый набор; объекты сопоставляются между снимками по ссылке.
+ * Math.random заменён детерминированным mulberry32 (FP_SEED): uuid объектов Three.js не повторяются.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -34,7 +34,11 @@ const name = args[1] || path.basename(file, '.html');
 
 const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-await page.addInitScript(() => { let s = 12345; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); });
+// mulberry32 — целочисленный генератор; THREE.MathUtils.generateUUID берёт 4 числа на uuid, они не должны повторяться
+await page.addInitScript(seed => {
+  let a = seed >>> 0;
+  Math.random = () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}, +process.env.FP_SEED || 12345);   // FP_SEED — зерно Math.random
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 if (process.env.FP_THROTTLE) { const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: +process.env.FP_THROTTLE }); }   // проверка зависимости от скорости машины
@@ -62,19 +66,24 @@ const snap = () => page.evaluate(() => {
   const matSig = m => [m.type, col(m.color), col(m.emissive), r4(m.opacity ?? 1), m.transparent ? 't' : '', m.visible ? '' : 'H', m.side, m.wireframe ? 'w' : '',
     tex(m.map), r4(m.roughness ?? 0), r4(m.metalness ?? 0), m.depthWrite ? '' : 'nz', m.vertexColors ? 'vc' : ''].join('/');
   const pathOf = o => { const p = []; for (let q = o; q && q !== scene; q = q.parent) p.push(q.name || q.type); return p.reverse().join(' › '); };
-  const recs = {};
+  const recs = [];   // по порядку обхода; объекты сопоставляются между снимками по ссылке (G.__fpObjs)
+  const objs = [];
   scene.traverse(o => {
     if (!o.geometry) return;
     let vis = true; for (let q = o; q; q = q.parent) if (!q.visible) { vis = false; break; }
-    recs[o.uuid] = {
+    objs.push(o); recs.push({
       k: o.type + ' | ' + pathOf(o),
       vis: vis ? 'V' : 'h',
       m: o.matrixWorld.elements.map(r4).join(','),
       g: geoSig(o.geometry),
       mat: [].concat(o.material || []).map(matSig).join(';'),
       inst: o.isInstancedMesh ? o.count + ':' + h(o.instanceMatrix.array.subarray(0, o.count * 16)) : '',
-    };
+    });
   });
+  // пары [запись, запись того же объекта в предыдущем снимке] — для поиска анимированных полей
+  const prev = window.__fpPrev, cur = new Map();
+  const pairs = recs.map((r, i) => { cur.set(objs[i], r); return [r, prev && prev.get(objs[i]) || null]; });
+  window.__fpPrev = cur;
   /* сериализация: числа округлены; объекты Three.js, DOM, функции — опущены; ссылки на OBJ — по номеру;
      свойства, повешенные на массивы (p.el, p.dead …), — выписываются; настоящие циклы — «[цикл]»;
      разделяемые ссылки (один объект в нескольких местах) выписываются полностью и перечисляются в shares */
@@ -113,7 +122,7 @@ const snap = () => page.evaluate(() => {
   data.OBJ = js(G.OBJ.map(o => ({ ...o })));   // поверхностные копии: вложенные ссылки на объекты — по номеру
   for (const [k, v] of Object.entries(G.logs)) data['log.' + k] = js(v && v.log);
   data.pickables = String(G.pickables.length);
-  return { recs, data };
+  return { pairs, data };
 });
 
 const A = await snap();
@@ -123,10 +132,9 @@ await browser.close();
 
 /* анимированные поля → «~» */
 const recs = [];
-for (const [id, a] of Object.entries(A.recs)) {
-  const b = B.recs[id] || {};
+for (const [b, a] of B.pairs) {   // объекты второго снимка; поле, изменившееся с первого снимка, — «~»
   const r = {};
-  for (const f of Object.keys(a)) r[f] = a[f] === b[f] ? a[f] : '~';
+  for (const f of Object.keys(b)) r[f] = !a || a[f] === b[f] ? b[f] : '~';
   recs.push(Object.values(r).join(' ¦ '));
 }
 recs.sort();
