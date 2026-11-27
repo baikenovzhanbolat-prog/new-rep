@@ -2,7 +2,10 @@
 /*
  * Сборка автономного HTML из исходников.
  *
- *   node tools/build.mjs [--out dist/genplan-3d-oskemen.html]
+ *   node tools/build.mjs [--out dist/reference/genplan-3d-oskemen.html]
+ *
+ * Эталонная сборка: без минификации, побайтно воспроизводит исходный файл (см. verify.mjs).
+ * Рабочая (минифицированная) сборка — Vite: npm run build → dist/genplan-3d-oskemen.html
  *
  * Маркеры (обрабатываются рекурсивно во всех подключаемых текстовых файлах):
  *   <!--@inline путь-->      — текст файла как есть
@@ -23,7 +26,7 @@ const rd = rel => {
   return fs.readFileSync(p);
 };
 
-function expand(text, depth = 0) {
+export function expand(text, depth = 0) {
   if (depth > 4) throw new Error('сборка: слишком глубокая вложенность маркеров');
   return text.replace(
     /<!--@(inline|base64|concat) ([^>]+?)-->|\/\*@(base64) ([^*]+?)\*\/|\/\*@(inline|json) ([^*]+?)\*\/null/g,
@@ -46,7 +49,7 @@ export function build() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const i = process.argv.indexOf('--out');
-  const outRel = i > 0 ? process.argv[i + 1] : 'dist/genplan-3d-oskemen.html';
+  const outRel = i > 0 ? process.argv[i + 1] : 'dist/reference/genplan-3d-oskemen.html';
   const html = build();
   const outPath = path.resolve(ROOT, outRel);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });

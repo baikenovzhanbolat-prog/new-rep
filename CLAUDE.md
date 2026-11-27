@@ -4,13 +4,19 @@
 Пользователь пишет по-русски; отвечать по-русски. Тексты интерфейса и комментарии в коде — на русском.
 
 ## Команды
-- `node tools/build.mjs` — сборка в `dist/genplan-3d-oskemen.html`
-- `node tools/verify.mjs` — сверка sha256 сборки с `tools/reference.sha256`
-- `node tools/smoke.mjs` — headless Chromium: загрузка и панели без ошибок JS (playwright уже установлен в облачном окружении)
+- `npm install` — один раз (Vite, vite-plugin-singlefile)
+- `npm run dev` — сервер разработки с автоперезагрузкой (порт 5173)
+- `npm run build` — рабочая сборка Vite → `dist/genplan-3d-oskemen.html` (минифицирована)
+- `npm run build:ref` — эталонная сборка без преобразований → `dist/reference/genplan-3d-oskemen.html`
+- `npm run verify` — sha256 эталонной сборки против `tools/reference.sha256`
+- `npm test` — verify + обе сборки + смоук-тест с их сравнением в Chromium (playwright уже установлен в облачном окружении)
 - `node tools/verify.mjs --update` — обновить эталон после **намеренного** изменения поведения
 
 ## Правила
 - Править только исходники (`src/`, `data/`, `assets/`, `vendor/`), не `dist/`.
+- Vite получает код приложения как один виртуальный модуль `/@genplan/app.js` (см. `tools/vite-plugin-genplan.mjs`);
+  `three` и OrbitControls берутся из `vendor/`, importmap в Vite-сборке удаляется. npm-пакет three не используется.
+- Маркеры данных в `src/app` не должны менять число строк раздела (на этом держится карта исходников в dev).
 - `src/app/NN-*.js` — части **одного** `<script type="module">` с общей областью видимости, склеиваются по порядку имён.
   Не превращать их в ES-модули без отдельной задачи; порядок важен (модули ссылаются на объявленное выше).
 - Рефакторинг без изменения поведения: сборка должна совпадать с эталоном побайтно (`verify`).

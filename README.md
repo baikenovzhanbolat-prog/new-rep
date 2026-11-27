@@ -4,30 +4,52 @@
 (АК-004/041/045), надземные и подземные сети, ПАЗ, виртуальный обход, сверка с чертежами, кинорежим.
 Three.js r160. На выходе — **один автономный HTML-файл**, работающий без интернета (в т. ч. на телефоне).
 
-## Сборка
+## Сборка и разработка
 
-Нужен Node.js ≥ 18, сторонних зависимостей для сборки нет.
-
-```bash
-node tools/build.mjs
-```
-
-Результат: `dist/genplan-3d-oskemen.html`. Его можно открыть в браузере.
+Нужен Node.js ≥ 20.19. Один раз установить зависимости (Vite и плагин склейки в один файл):
 
 ```bash
-node tools/verify.mjs
+npm install
 ```
 
-Сверяет сборку с эталоном `tools/reference.sha256`. Сейчас эталон — исходный файл v0.42: сборка совпадает с ним побайтно.
+Режим разработки: сервер на http://localhost:5173. Любая правка в `src/`, `data/`, `assets/`, `vendor/` сама перезагружает страницу.
 
 ```bash
-node tools/smoke.mjs
+npm run dev
 ```
 
-Смоук-тест в headless Chromium: загрузка, отрисовка и открытие панелей без ошибок JS (нужен пакет `playwright`).
+Сервер открыт и в локальной сети, поэтому с телефона в той же Wi-Fi можно открыть `http://<ip-компьютера>:5173`.
+Ошибки в консоли браузера указывают на настоящий файл и строку раздела (например, `40-pnet.js:1396`).
 
-GitHub Actions (`.github/workflows/build.yml`) на каждый push собирает файл, сверяет его, прогоняет смоук-тест
-и выкладывает `genplan-3d-oskemen.html` как артефакт сборки (вкладка Actions → запуск → Artifacts).
+Рабочая сборка через Vite: один автономный минифицированный файл `dist/genplan-3d-oskemen.html` (≈10,6 МБ, исходник был 12,4 МБ).
+
+```bash
+npm run build
+```
+
+Эталонная сборка без минификации: `dist/reference/genplan-3d-oskemen.html`, побайтно совпадает с исходным v0.42.
+
+```bash
+npm run build:ref
+```
+
+Полная проверка: сверка эталонной сборки с `tools/reference.sha256`, обе сборки и их сравнение в headless Chromium
+(загрузка без ошибок JS, все панели, статистика отрисовки и видимые тексты интерфейса должны совпасть).
+
+```bash
+npm test
+```
+
+Для смоук-теста нужен пакет `playwright`: `npm i --no-save playwright && npx playwright install chromium`.
+
+GitHub Actions (`.github/workflows/build.yml`) на каждый push делает то же самое и выкладывает `genplan-3d-oskemen.html`
+и скриншоты смоук-теста как артефакт сборки (вкладка Actions → запуск → Artifacts).
+
+### Две сборки: зачем
+
+- **Vite** (`npm run build`) — то, что отдаётся пользователям: минифицированный JS и CSS, Three.js без обёртки data:URL.
+- **Эталонная** (`npm run build:ref`, `tools/build.mjs`) — склейка без преобразований. Пока идёт рефакторинг без изменения
+  поведения, она обязана совпадать с эталоном побайтно (`npm run verify`), а Vite-сборка — вести себя так же, как она (`npm test`).
 
 ## Структура
 
@@ -41,7 +63,8 @@ GitHub Actions (`.github/workflows/build.yml`) на каждый push собир
 | `assets/docs/` | «Резервуар 1.pdf» и его страницы |
 | `assets/bin/` | двоичные данные: 3D-модели склада и вагона (zlib), рельеф, текстура |
 | `vendor/` | three.module.js r160, OrbitControls.js, mp4-muxer 5.2.2 (MIT) |
-| `tools/` | `build.mjs`, `verify.mjs`, `smoke.mjs`, `split.mjs` (одноразовое разбиение исходного HTML) |
+| `tools/` | `vite-plugin-genplan.mjs` (подключение склейки к Vite), `build.mjs` (эталонная сборка), `verify.mjs`, `smoke.mjs`, `split.mjs` (одноразовое разбиение исходного HTML) |
+| `vite.config.js` | настройки Vite: корень `src/`, выход в один файл |
 
 ### Разделы кода (`src/app`)
 
