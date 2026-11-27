@@ -21,6 +21,8 @@ const F24 = (() => {
   const lod = [];
   const PRP_C = 0x2e7d32;   // цвет В10 как у трассы ГП-005 (в режиме ГОСТ 14202 — красный, через MATR)
   const pipeMat = () => new THREE.MeshStandardMaterial({ color: PRP_C, roughness: 0.45, metalness: 0.3 });
+  /* v0.54: трубы пенотушения — в реестр PIPEREG (единая модель сети и её проверка) */
+  const reg24 = (pts, r, name, eqEnd) => PIPEREG.push({ gen: 'F24', net: 'prp', r, od: 2 * r, name, src: 'ПТ', pts: pts.map(v => v.toArray()), cf: { plan: 'V', elev: 'P', dn: 'V' }, eqEnd });
   const meshOf = (b, m, o, cast = true) => { const me = b.mesh(m); me.castShadow = cast; me.receiveShadow = true; if (o) { me.userData.o = o; pickables.push(me); } return me; };
   /* решётчатый настил: прозрачность по маске (ячейка ≈ 34 мм) */
   const grateMat = (() => {
@@ -246,6 +248,13 @@ const F24 = (() => {
     const elbow = (p, r) => bfit.cyl(V(p.x, p.y - r, p.z), V(p.x, p.y + r, p.z), r * 1.0, 0, 12);   // отвод (условно — шар/цилиндр по диаметру)
     // ввод Ø108×4: стояк от пола зала до оси +1,800, тройник
     run(pt(B10.xIn, B10.zN, PH_F1 - 0.05), pt(B10.xIn, B10.zN), R108);
+    // v0.54: подземный ввод Ø108×4 (200-ПТ-002: низ −2,820) от конца трассы В10 ГП-005 у северной стены (x −61,55; z 19,69) — опуск и подвод условно
+    {
+      const yIn = PH_F0 - 2.82 + R108, eN = [-61.55, 19.69];
+      const path = [V(eN[0], -0.163, eN[1]), V(eN[0], yIn, eN[1]), V(B10.xIn, yIn, eN[1]), V(B10.xIn, yIn, B10.zN), pt(B10.xIn, B10.zN, PH_F1 - 0.05), pt(B10.xIn, B10.zN)];
+      for (let i = 1; i < path.length - 1; i++) bpi.cyl(path[i - 1], path[i], R108, 0, 14);
+      reg24(path, R108, 'Ввод В10 Ø108×4 в насосный цех 200 (200-ПТ-002; подземная часть — условно)', 'Пенопровод цеха 200: тройник на +1,800');
+    }
     bfit.cyl(pt(B10.xIn - 0.07, B10.zN), pt(B10.xIn + 0.07, B10.zN), R108 * 1.15, 0, 14);
     // север: Ø76×4 к ГПС-3 и к углу; восток и юг (до ГПС-2) — Ø89×4; юг и запад — Ø76×4
     run(pt(B10.xG, B10.zN), pt(B10.xIn, B10.zN), R76); run(pt(B10.xIn, B10.zN), pt(B10.xE, B10.zN), R89);
@@ -379,6 +388,7 @@ const F24 = (() => {
       bs.bar(V(x, yT - 1.75, zSt), V(x, yT - 0.12, zSt - 1.2), 0.06, 0.06, C.str);              // подкос
       for (const zz of [zSt - 0.2, zSt - 1.6]) bf.ring(V(x, yT, zz), new THREE.Vector3(0, 0, 1), R + 0.007, 0.006, C.galv, 14);   // хомуты К-1 (200 / 1400)
       gps(bg, V(x, yT, zSt - 2.07), new THREE.Vector3(0, 0, -1));             // ГПС-600, выход пены — к резервуару (на север)
+      reg24([V(x, hAt(x, zRs) + 0.6, zRs), V(x, yT, zRs), V(x, yT, zSt - 1.9)], R, `Стояк Ст.В10-${i + 1} Ø76×4 к ГПС-600 над РГС ${RGS_ID[i]}`, `ГПС-600 над РГС ${RGS_ID[i]}: вход`);
       bf.cyl(V(x, yR - 0.02, zRs), V(x, yR + 0.04, zRs), R + 0.03, C.conc, 12);
     });
     const oP = { id: 'В10 (РГС)', net: 1, f24: 'b10', name: 'Стояки В10 Ø76×4 к ГПС-600 над РГС (Ст.В10-1…4)', note: 'От подземного коллектора −1,970 (Ø133×5 → 108 → 89 → 76×4, шаг 4252) — 116.1-116.4-ПТ-002-0. Стояк в 500 мм от стойки, стойка — в 2500 от оси опоры резервуара; на консоли — хомуты К-1. Совпадает с трассой В10 ГП-005 (z 12,25) с точностью 0,02 м.' };
@@ -400,8 +410,12 @@ const F24 = (() => {
     const yAt = x => H + 7.30 + (x - 5.9) * (0.40 / 2.3);              // ось разводки по скату (+6,900* у X 3,6 … +7,300* у X 5,9)
     const yTop = H + 7.36, xR = 9.2, xT = 6.2, xG = [5.9, 3.6];
     const bp = GK.builder(), bs = GK.builder(), bg = GK.builder();
-    const yG0 = hAt(X(xR), Z(Yp));
-    bp.cyl(V(X(xR), yG0 - 0.35, Z(Yp)), V(X(xR), yTop, Z(Yp)), R89, 0, 14);                       // стояк Ø89×4
+    // v0.54: подвод от конца подземной трассы В10 ГП-005 (x −52,61; z −11,29) на глубине трассы — до основания стояка (условно)
+    const eU = [-52.61, -11.29], yU = hAt(eU[0], eU[1]) - UGND_DEPTH.prp, xr = X(xR), zr = Z(Yp);
+    bp.cyl(V(eU[0], yU, eU[1]), V(xr, yU, eU[1]), R89, 0, 12); bp.cyl(V(xr, yU, eU[1]), V(xr, yU, zr), R89, 0, 12);
+    bp.cyl(V(xr, yU, zr), V(xr, yTop, zr), R89, 0, 14);                                              // стояк Ø89×4
+    reg24([V(eU[0], yU, eU[1]), V(xr, yU, eU[1]), V(xr, yU, zr), V(xr, yTop, zr), V(X(xT), yAt(xT), zr), V(X(xG[1]), yAt(xG[1]), zr)], R89, 'Пенопровод В10 станции 186: подвод, стояк Ø89×4, разводка под кровлей (186-ПТ-002)', 'ГПС-600 (186) у X 3,6: вход');
+    reg24([V(X(xG[0]), yAt(xG[0]), zr), V(X(xG[0]), yAt(xG[0]) - 0.5, zr)], R76, 'Пенопровод В10 станции 186: опуск к ГПС-600 у X 5,9', 'ГПС-600 (186) у X 5,9: вход');
     bp.cyl(V(X(xR), yTop, Z(Yp)), V(X(xT), yAt(xT) + 0.02, Z(Yp)), R89, 0, 14);                   // Ø89×4 под кровлей
     bp.cyl(V(X(xT), yAt(xT), Z(Yp)), V(X(xG[1]), yAt(xG[1]), Z(Yp)), R76, 0, 14);                 // Ø76×4 после перехода
     bp.cyl(V(X(xR), yTop - R89, Z(Yp)), V(X(xR), yTop + R89, Z(Yp)), R89 + 0.006, 0, 12);          // отвод 90° (поз. 6)

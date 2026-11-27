@@ -879,7 +879,7 @@ const PNET = (() => {
     const c = classifyEnd(n); if (c.kind !== 'врезка') continue;
     const s = n.ends[0].s, p = s.pipe, t = c.ref, q = t.pipe; if (!p || !q || (p.na === n) === (p.nb === n)) continue;
     const A = rendOf(p), B = rendOf(q);
-    if (!solid(A) || !solid(B)) { fitSkip.set(n, !A || !B ? 'участок строится отдельным модулем (обвязка РВС) или подземный' : 'теплосеть в изоляции'); continue; }
+    if (!solid(A) || !solid(B)) { fitSkip.set(n, !A || !B ? 'участок строится отдельным модулем (обвязка РВС, котельная, пенотушение) или подземный' : 'теплосеть в изоляции'); continue; }
     const at = p.na === n, [, tt, px, pz] = segPt(t, n.x, n.z), py0 = yOn(t, tt), py = py0 + (typeof arcOf === 'function' && q.offAt ? q.offAt(arcOf(t, tt)) : 0);   // v0.15: магистраль может быть поднята над пересечением
     if (Math.abs(n.ends[0].y - py0) > 0.06) { fitSkip.set(n, `конец выше/ниже оси магистрали на ${fmt(Math.abs(n.ends[0].y - py0), 2)} м`); continue; }
     if (A.r > B.r * 1.05) { fitSkip.set(n, 'Ø ответвления больше Ø магистрали — проверить данные'); continue; }
@@ -1046,6 +1046,7 @@ const PNET = (() => {
 
   /* ---------- 7. проверка ---------- */
   const issues = [];
+  const NOTES = /*@json data/pnet-notes.json*/null;   // v0.54: пояснения к замечаниям, требующим решения заказчика/проектировщика
   const CAT = {
     OPEN: 'Открытый конец без подключения',
     GAP: 'Разрыв трассы (соосные концы)',
@@ -1110,7 +1111,7 @@ const PNET = (() => {
     issues.push(it); return it;
   }
   const stat = { tees: 0, teeEnds: 0, bends: 0, bendsFit: 0, rises: 0, equipEnds: 0, ends: 0, crossOK: 0, joints: 0, fills: 0, contours: 0, trims: 0, aligns: 0, fitm: 0, wellEnds: 0, capEnds: 0, drops: 0, corns: 0, exts: 0, endsEv: 0, endsNoEv: 0 };
-  const runGen = g => g === 'RVSD' || g === 'PHX' || g === 'UGN' || RENDER.has(g);   // непрерывные трубы с гнутыми отводами
+  const runGen = g => g === 'RVSD' || g === 'PHX' || g === 'UGN' || g === 'K501' || g === 'F24' || RENDER.has(g);   // v0.54: K501, F24 — отводы строят свои модули   // непрерывные трубы с гнутыми отводами
   function fitIssue(f, p, segs, n) { stat.fitm++; f.issue = addIssue('FITM', 1, p, { segs, node: n, txt: `${f.obj.id} ${f.obj.name}`, status: 'смоделировано условно', fit: f }); }
   const evEnd = n => { const e = n.ends[0], s = e.s; if (!EV[s.net] || s.under) return null; const d = outDir(s, e.e); return evLine(s.net, n.x + d[0] * 0.08, n.z + d[1] * 0.08, n.x + d[0] * 0.45, n.z + d[1] * 0.45).f >= 0.8; };
   const evEndTxt = c => c === null ? '' : c ? '; на векторном ГП-005 линия идёт дальше — этого участка в модели нет' : '; на векторном ГП-005 линия здесь тоже заканчивается';
@@ -1165,7 +1166,7 @@ const PNET = (() => {
         if (ang > 8 && A.s.under === B.s.under) {
           stat.bends++; n.kind = n.kind || 'отвод';
           if (A.s.pipe === B.s.pipe && runGen(A.s.gen)) stat.bendsFit++;
-          else if (A.s.gen === B.s.gen && (A.s.gen === 'RVSD' || A.s.gen === 'PHX' || A.s.gen === 'RGSN')) stat.bendsFit++;   // v0.32: RGSN — отводы строит модуль РГС-75
+          else if (A.s.gen === B.s.gen && (A.s.gen === 'RVSD' || A.s.gen === 'PHX' || A.s.gen === 'RGSN' || A.s.gen === 'K501' || A.s.gen === 'F24')) stat.bendsFit++;   // v0.32: RGSN — отводы строит модуль РГС-75
           else if (A.s.gen === 'ASN' || B.s.gen === 'ASN') stat.bendsFit++;   // v0.25: шарниры консоли и вход в колонну АСН-80-02.01 — узлы изделия (модуль F25)
           else if (fitAt.get(n)) { stat.bendsFit++; fitIssue(fitAt.get(n), p, [A.s, B.s], n); }
           else addIssue('FIT', 1, p, { segs: [A.s, B.s], node: n, d: ang, txt: `стык разных участков под углом ${Math.round(ang)}° — отвод не смоделирован` + (fitSkip.get(n) ? ' — ' + fitSkip.get(n) : '') });
@@ -1229,12 +1230,18 @@ const PNET = (() => {
       if (frac < 0.95 && gapAt) {
         const yy = procLogic.procY ? procLogic.procY(gapAt[0], gapAt[1]) : hAt(gapAt[0], gapAt[1]) + 0.6;
         const cond = e.src === 'усл' || e.cond, pft = pf ? `; по цепочке труб (PFLOW): ${fmt(pf.len, 1)} м` + (pf.gap > 0.05 ? `, условно ${fmt(pf.gap, 1)} м` : '') : '';
-        if (pf && pf.kind === 'phys' && !cond) addIssue('PROCA', 1, [gapAt[0], yy, gapAt[1]], { segs: [], proc: e.id, net: '', d: gapMax * 0.5, status: 'поток — по трубам', txt: `ребро ${e.id} «${e.n || ''}» (${e.src}): ось графа совпадает с трубами на ${Math.round(frac * 100)} %, цепочка труб непрерывна` + pft });
+        if (pf && (pf.kind === 'phys' || pf.kind === 'noz') && !cond) addIssue('PROCA', 1, [gapAt[0], yy, gapAt[1]], { segs: [], proc: e.id, net: '', d: gapMax * 0.5, status: 'поток — по трубам', txt: `ребро ${e.id} «${e.n || ''}» (${e.src}): ось графа совпадает с трубами на ${Math.round(frac * 100)} %, цепочка труб непрерывна` + pft });
         else addIssue(cond ? 'PROCU' : 'PROCX', cond ? 1 : 2, [gapAt[0], yy, gapAt[1]], { segs: [], proc: e.id, net: '', d: gapMax * 0.5, txt: `ребро ${e.id} «${e.n || ''}» (${e.src}): покрыто физическими трубами на ${Math.round(frac * 100)} %` + pft });
       }
     }
   }
 
+  function applyNotes() {   // v0.54: пояснения из data/pnet-notes.json — статус, ссылка на находку, при необходимости важность
+    for (const it of issues) for (const n of NOTES.notes) {
+      if (!n.cats.includes(it.cat) || Math.hypot(it.p[0] - n.p[0], it.p[2] - n.p[1]) > n.r) continue;
+      it.status = n.status + (n.ref ? ' (' + n.ref + ')' : ''); it.txt = (it.txt ? it.txt + '; ' : '') + n.txt; it.ref = n.ref; if (n.sev) it.sev = n.sev; break;
+    }
+  }
   /* ---------- 8. визуализация: маркеры проблем, узлы, подсветка ---------- */
   scene.add(PNET_G.diag, PNET_G.nodes, PNET_G.hl);
   const SCOL = { 3: 0xd0261c, 2: 0xf08c00, 1: 0x2f7fd0 };
@@ -1501,7 +1508,7 @@ const PNET = (() => {
   function ensureValidated() {
     if (validated) return; validated = true;
     const t1 = performance.now();
-    try { validate(); } catch (e) { console.error('PNET: ошибка проверки', e); }
+    try { validate(); applyNotes(); } catch (e) { console.error('PNET: ошибка проверки', e); }
     tVal = performance.now() - t1;
     buildMarkers();
   }
