@@ -14,6 +14,7 @@ function closePanels() {
   if (window.__DX) window.__DX.hidePanel();   // v0.21
   if (window.__GEO) window.__GEO.hidePanel();
   if (window.__PNET) window.__PNET.hidePanel();
+  if (window.__TRN) window.__TRN.hidePanel();   // обучение
   netP.style.display = 'none'; objP.style.display = 'none'; procP.style.display = 'none'; document.body.classList.remove('procOpen');
   document.getElementById('bNet').classList.remove('on'); document.getElementById('bObj').classList.remove('on'); document.getElementById('bProc').classList.remove('on');
 }

@@ -4,6 +4,7 @@ function loop() {
   const cineOn = CINE.pre(performance.now());   // v0.37–0.42: кинорежим ведёт камеру сам
   if (!window.__walkOn && !cineOn) { keyStep(); stepCamAnim(); controls.update(); }
   WALK.tick();
+  TRN.tick();
   MATR.tick();
   PNET.tick();
   GEO.tick();
