@@ -1,0 +1,29 @@
+{
+  "name": "genplan-3d-oskemen",
+  "version": "0.47.0",
+  "private": true,
+  "description": "Цифровой двойник нефтебазы ТС Оскемен: 3D-генплан, технология, сети (Three.js, офлайн-HTML)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:ref": "node tools/build.mjs",
+    "verify": "node tools/verify.mjs",
+    "smoke": "node tools/smoke.mjs",
+    "test": "npm run test:unit && npm run verify && npm run build && npm run build:ref && node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html && npm run test:sim && npm run test:mobile && npm run test:fp",
+    "fp": "node tools/fingerprint.mjs",
+    "test:fp": "node tools/fingerprint.mjs dist/reference/genplan-3d-oskemen.html ref && node tools/fingerprint.mjs dist/genplan-3d-oskemen.html vite && node tools/fingerprint.mjs --diff dist/fp/ref.json dist/fp/vite.json",
+    "fmt:data": "node tools/fmt-data.mjs",
+    "test:unit": "node --test 'tests/*.test.mjs'",
+    "test:sim": "node tools/sim-check.mjs dist/genplan-3d-oskemen.html",
+    "profile": "node tools/profile.mjs",
+    "test:mobile": "node tools/mobile-check.mjs dist/genplan-3d-oskemen.html"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "devDependencies": {
+    "vite": "8.4.0",
+    "vite-plugin-singlefile": "2.3.4"
+  }
+}

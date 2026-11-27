@@ -1,0 +1,41 @@
+name: build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Модульные тесты (гидравлика, логика ТП)
+        run: npm run test:unit
+      - name: Сверка эталонной сборки с эталоном
+        run: npm run verify
+      - name: Сборка Vite (рабочий файл) и эталонная сборка
+        run: npm run build && npm run build:ref
+      - name: Смоук-тест и сравнение сборок в Chromium
+        run: |
+          npm i --no-save playwright@1.49.1
+          npx playwright install --with-deps chromium
+          node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html
+      - name: Расчёт не зависит от отображения
+        run: npm run test:sim
+      - name: Мобильный вид (iPhone, портрет и альбом)
+        run: npm run test:mobile
+      - name: Отпечатки сцены и данных — Vite-сборка против эталонной
+        run: npm run test:fp
+      - name: Собранный HTML
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: genplan-3d-oskemen
+          path: |
+            dist/genplan-3d-oskemen.html
+            dist/smoke/
+          if-no-files-found: warn
