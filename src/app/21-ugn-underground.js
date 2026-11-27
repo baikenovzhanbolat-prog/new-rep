@@ -207,10 +207,12 @@ const UGN = (() => {
   const runsOf = {};
 
   // В2 — противопожарный водопровод; В10 — пенораствор; В1 — хоз-питьевой производственный водопровод
+  // В2, В10: Ø и глубина — по 610-ПТ-001/004 (UG_PT, раздел 20-piped.js)
+  const ptDepth = `глубина до низа трубы ${fmt(UG_PT_INV.med)} м — медиана по профилю кольца 610-ПТ-004 (${UG_PT_INV.n} точек, от ${fmt(UG_PT_INV.min)} до ${fmt(UG_PT_INV.max)} м; совпадает с глубинами колодцев 610-ПТ-006/007). По трассе принята постоянной: профиль поточечно не привязан — нет плана 610-ПТ-002`;
   runsOf.pv = ptsY(polys('pv'), constY(D.pv));
-  buildRuns(runsOf.pv, def.pv.r, pipeM(def.pv.c), cat.pv, netObj('pv', 'В2', `Ось трубы — ${fmt(D.pv)} м от поверхности (условно), песчаная подготовка.`), { bed: 1 });
+  buildRuns(runsOf.pv, UG_OD.pv / 2, pipeM(def.pv.c), cat.pv, netObj('pv', 'В2', `Труба Ø219×5 (610-ПТ-001). Ось — ${fmt(D.pv)} м от поверхности: ${ptDepth}. Песчаная подготовка — условно.`), { bed: 1 });
   runsOf.prp = ptsY(polys('prp'), constY(D.prp));
-  buildRuns(runsOf.prp, def.prp.r, pipeM(def.prp.c), cat.prp, netObj('prp', 'В10', `Ось трубы — ${fmt(D.prp)} м от поверхности (условно).`), { bed: 1 });
+  buildRuns(runsOf.prp, UG_OD.prp / 2, pipeM(def.prp.c), cat.prp, netObj('prp', 'В10', `Труба Ø159×5 (610-ПТ-001), в одной траншее с В2 (610-ПТ-004). Ось — ${fmt(D.prp)} м от поверхности: ${ptDepth}.`), { bed: 1 });
   runsOf.water = ptsY(polys('water'), constY(D.water));
   buildRuns(runsOf.water, def.water.r, pipeM(def.water.c), cat.water, netObj('water', 'В1', `Ось — ${fmt(D.water)} м (условно). Участки в футляре — по обозначению ГП-005. По легенде ГП-005 голубая линия — «Водопровод хоз-питьевой производственный подземный» (В1; слой листа назван «Всасывающие_трубопроводы», но цвет и легенда — В1): ввод с юго-востока → вдоль восточной границы → 401 и РПВ 654. Участки у въездов (x ≈ −93,6 и 88,7, к югу от ограждения) — «Участок выноса существующего водопровода, переносной» (В0).`), { bed: 1 });
   // К3 — самотёк с уклоном к 798
@@ -413,7 +415,7 @@ const UGN = (() => {
   // панель-легенда режима
   const ugp = document.getElementById('ugp');
   const ROWS = [
-    ['pv', 'В2 — противопожарный водопровод', def.pv.c, `ось ${fmt(D.pv)} м*`], ['prp', 'В10 — пенорастворопровод', def.prp.c, `ось ${fmt(D.prp)} м*`],
+    ['pv', 'В2 — противопожарный водопровод Ø219', def.pv.c, `ось ${fmt(D.pv)} м`], ['prp', 'В10 — пенорастворопровод Ø159', def.prp.c, `ось ${fmt(D.prp)} м`],
     ['water', 'В1 — водопровод хоз-питьевой произв.', def.water.c, `ось ${fmt(D.water)} м*`],
     ['kpd', 'К3 — производственно-дождевая', def.kpd.c, K3.ok ? `самотёк ${fmt(K3.i * 1000, 0)} ‰*` : `ось ${fmt(D.kpd)} м*`], ['k1', 'К1 — хоз-бытовая', def.k1.c, `ось ${fmt(D.k1)} м*`],
     ['heat', 'Теплосеть — подземные участки', def.heat.c, `ось ${fmt(D.heat)} м*`], ['tech', 'ДТ, Б, Д, Гу — переходы в футляре', def.dtl.c, `ось ${fmt(D.tech)} м*`],
@@ -423,7 +425,7 @@ const UGN = (() => {
   ugp.innerHTML = '<div class="uh"><b>Подземные сети</b><button class="lbtn" id="ugMin" title="Свернуть/развернуть">▾</button><button class="lbtn" id="ugX" title="Выйти из режима">✕</button></div><div id="ugB">' +
     ROWS.map(([k, n, c, d]) => `<label><input type="checkbox" data-ug="${k}" checked><i style="background:#${c.toString(16).padStart(6, '0')}"></i><span>${n}</span><em>${d}</em></label>`).join('') +
     '<label class="op">Земля<input type="range" id="ugOp" min="0" max="0.7" step="0.02" value="' + opac + '"></label>' +
-    '<div class="nt">* Глубины и диаметры — условные: продольных профилей в документации нет. Трассы, колодцы, футляры, точки подъёма — по ГП-005.</div>' +
+    '<div class="nt">В2, В10 — диаметры по 610-ПТ-001, глубина по продольному профилю 610-ПТ-004 (медиана по кольцу, постоянная по трассе). * Глубины и диаметры остальных сетей — условные: профилей в документации нет. Трассы, колодцы, футляры, точки подъёма — по ГП-005.</div>' +
     '<div class="nt">Щелчок по люку или шахте колодца — подсветка трассы его сети.</div></div>';
   ugp.querySelectorAll('[data-ug]').forEach(cb => cb.onchange = () => { cat[cb.dataset.ug].visible = cb.checked; });
   document.getElementById('ugOp').oninput = e => { opac = +e.target.value; if (state) fade(true); };
