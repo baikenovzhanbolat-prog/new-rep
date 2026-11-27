@@ -37,16 +37,6 @@ const F24 = (() => {
   /* =========================== 1. ВЫШКИ ЛАФЕТНОГО СТВОЛА 800.1, 800.2 =========================== */
   const TW = { A: 1.35, LEG: 1.27, H: 5.0, RL: 1.25, RISER: 0.30, FL: 6.60 };   // ПТ-002: 2700/2, базы на 80 внутрь, +5,000, 1250, 1650 от Б, 350 над ограждением
   const towers = {};   // id → { mon: {yaw, pitch}, yawG, pitchG, tip, aim, water, ... }
-  const oldTowers = [];
-  function oldTower(g, px, py) {   // прежняя условная вышка 12 м (v0.5–v0.23) — для сравнения; отдельная группа сцены, чтобы не влиять на рамку выбора и подпись
-    const og = new THREE.Group(); og.name = '800: прежняя вышка 12 м'; og.visible = false;
-    const [x, z] = P(px, py), w = 1.4, H = 12; og.position.y = hAt(x, z);
-    for (const [i, k] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) add(og, new THREE.BoxGeometry(0.18, H, 0.18), mat.red, x + i * w, H / 2, z + k * w);
-    for (let y = 2; y < H; y += 2.5) { add(og, new THREE.BoxGeometry(2 * w, 0.1, 0.1), mat.red, x, y, z - w); add(og, new THREE.BoxGeometry(2 * w, 0.1, 0.1), mat.red, x, y, z + w); add(og, new THREE.BoxGeometry(0.1, 0.1, 2 * w), mat.red, x - w, y, z); add(og, new THREE.BoxGeometry(0.1, 0.1, 2 * w), mat.red, x + w, y, z); }
-    add(og, new THREE.BoxGeometry(2 * w + 0.8, 0.2, 2 * w + 0.8), mat.steelD, x, H + 0.1, z);
-    const n = add(og, new THREE.CylinderGeometry(0.12, 0.2, 1.8, 12), mat.dark, x, H + 1.0, z - 0.4); n.rotation.x = -0.9;
-    scene.add(og); oldTowers.push(og);
-  }
   function tower(g, px, py, id) {
     const [cx, cz] = P(px, py), { A, LEG, H, RL } = TW;
     const bp = GK.builder(), bs = GK.builder(), bf = GK.builder();   // окраска; оцинковка/сталь; мелкие детали (LOD)
@@ -478,7 +468,7 @@ const F24 = (() => {
   /* контур для проверки связности сетей (PNET): прежний габарит вышки ±1,8 м — чтобы классификация концов сетей
      у вышек (в т. ч. К1) осталась как в v0.23; привязка концов труб к сооружениям по габариту — эвристика PNET */
   const fp = (px, py) => { const [x, z] = P(px, py); return new THREE.Box3(new THREE.Vector3(x - 1.8, -1, z - 1.8), new THREE.Vector3(x + 1.8, 13, z + 1.8)); };
-  const api = { tower, late, tick, lod, VIEWS, craneCmd, hookLow, fp, cardHTML, bindCard, aimTower, setWater, towers, crane, CR, oldTowers, hall, rgsG, jetG, set speed(v) { SPEED = +v || 1; }, get state() { return { towers: Object.fromEntries(Object.entries(towers).map(([k, T]) => [k, { yaw: T.yaw, pitch: T.pitch, aim: T.aim, water: T.water, jet: T.jet ? { range: T.jet.range, end: T.jet.end.toArray() } : null }])), crane: { bz: crane.bz, hx: crane.hx, hy: crane.hy } }; } };
+  const api = { tower, late, tick, lod, VIEWS, craneCmd, hookLow, fp, cardHTML, bindCard, aimTower, setWater, towers, crane, CR, hall, rgsG, jetG, set speed(v) { SPEED = +v || 1; }, get state() { return { towers: Object.fromEntries(Object.entries(towers).map(([k, T]) => [k, { yaw: T.yaw, pitch: T.pitch, aim: T.aim, water: T.water, jet: T.jet ? { range: T.jet.range, end: T.jet.end.toArray() } : null }])), crane: { bz: crane.bz, hx: crane.hx, hy: crane.hy } }; } };
   window.__F24 = api;
   return api;
 })();

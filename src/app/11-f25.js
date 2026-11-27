@@ -406,20 +406,6 @@ const F25 = (() => {
   /* =========================== 5. ГРУППЫ И СБОРКА СТАНЦИИ =========================== */
   let root0 = null;
   const pipeG = new THREE.Group(); pipeG.name = 'F25: трубы станции 186'; scene.add(pipeG);
-  const oldG = new THREE.Group(); oldG.name = '186: прежняя модель'; oldG.visible = false; scene.add(oldG);
-  function old186() {   // прежняя условная модель v0.10 (для сравнения)
-    const g = new THREE.Group(); const [a, b] = P(2430, 2843), [c, d] = P(2566, 3007), H = 6;
-    for (const x of [a, c]) for (const z of [b, (b + d) / 2, d]) add(g, new THREE.BoxGeometry(0.35, H, 0.35), mat.steelD, x, H / 2, z);
-    add(g, new THREE.BoxGeometry(c - a + 0.8, 0.45, d - b + 0.8), mat.wall, (a + c) / 2, H + 0.22, (b + d) / 2);
-    add(g, new THREE.BoxGeometry(c - a + 0.85, 0.18, d - b + 0.85), mat.red, (a + c) / 2, H + 0.05, (b + d) / 2);
-    const [pa, pb] = P(2446, 2856), [pc, pd] = P(2502, 3001), PH = 2.9;
-    boxPx(g, 2446, 2856, 2502, 3001, 0.2, mat.conc);
-    add(g, new THREE.BoxGeometry(pc - pa, 0.15, pd - pb), mat.steelD, (pa + pc) / 2, PH, (pb + pd) / 2);
-    for (const x of [pa + 0.2, pc - 0.2]) for (const z of [pb + 0.2, (pb + pd) / 2, pd - 0.2]) add(g, new THREE.BoxGeometry(0.15, PH, 0.15), mat.steelD, x, PH / 2, z);
-    const [sx0, sz0] = P(2474, 2890); const st = add(g, new THREE.BoxGeometry(1.0, 0.12, 4.2), mat.steelD, sx0, PH / 2, sz0); st.rotation.x = 0.72;
-    const [lx, lz] = P(2502, 2930); const arm = add(g, new THREE.CylinderGeometry(0.08, 0.08, 3.2, 10), mat.dark, lx + 1.2, PH + 1.0, lz); arm.rotation.z = 1.2;
-    g.position.y = hAt((a + c) / 2, (b + d) / 2); oldG.add(g);
-  }
   function station(g) {
     const root = new THREE.Group(); root.position.y = H186; g.add(root); root0 = root; inSt = true;
     canopy(root); pads(root); platform(root);
@@ -509,7 +495,6 @@ const F25 = (() => {
     const z = TK.z;
     tkY = { yA: nodeY(TK.x89, z), yB: nodeY(TK.x92, z), y14a: yLine(57.87, z, N), y14b: yLine(59.78, z, N), yC: nodeY(TK.xW, z), yb1: yLine(57.35, -19.41, N), yb2: yLine(57.35, -17.50, N) };
   }
-  const tkOld = new THREE.Group(); tkOld.name = 'ДТ(Л): прежний переход ГП-005'; tkOld.visible = false; scene.add(tkOld);
   /* --- 3D опор и арматуры по ТК-007 --- */
   const tkG = new THREE.Group(); tkG.name = 'F25: опоры и арматура ТК-007'; scene.add(tkG);
   function ballValve(b, c, ax, open, dn = 50) {   // кран шаровой с рукояткой (поз. 8 / 10)
@@ -627,7 +612,7 @@ const F25 = (() => {
     station186Pipes(); tkPipes(); tkBuild();
     FAST_LOD.push(...lod);
   }
-  const api = { station, late, tick, initTk, cardHTML, bindCard, VIEWS, kin, ASN, POSE_W, POSE_G, TK, tkY, H186, H186t, sx, sz, oldG, tkOld, tkG, pipeG, REC, ok186, truck, stems,
+  const api = { station, late, tick, initTk, cardHTML, bindCard, VIEWS, kin, ASN, POSE_W, POSE_G, TK, tkY, H186, H186t, sx, sz, tkG, pipeG, REC, ok186, truck, stems,
     own, speed: 1, dbg: () => ({ L: procLogic, S: procSim, PROC }) /* для проверки модели ТП */, setPose: v => { kin.manual = v ? 1 : 0; },
     get state() { return { H186t, pose: kin.pose, hc: kin.hc, mp: kin.mp, fill: kin.fill, a1: kin.a1, a2: kin.a2, ok186, tkY, H186, yTop: TK.yTop }; } };
   window.__F25 = api;

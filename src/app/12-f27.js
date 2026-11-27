@@ -244,14 +244,6 @@ const F27 = (() => {
   }
 
   /* =========================== 5. СБОРКА =========================== */
-  const oldG = new THREE.Group(); oldG.name = '166: прежняя условная модель'; oldG.visible = false; scene.add(oldG);
-  function old166() {   // прежняя условная модель v0.10 (для сравнения): навес по контуру ГП-003 и ТРК-параллелепипед
-    const g = new THREE.Group();
-    canopy(g, [2660, 2934, 2722, 3006], 4.5); FAC.canopyLights(g, [2660, 2934, 2722, 3006], 4.5, 2);
-    boxPx(g, 2668, 2945, 2714, 2995, 0.15, mat.conc);
-    boxPx(g, 2684, 2958, 2698, 2982, 1.9, mat.red, 0.15);
-    const [a, b] = P(2660, 2934), [c, d] = P(2722, 3006); g.position.y = hAt((a + c) / 2, (b + d) / 2); oldG.add(g);
-  }
   const IND = {};
   function build(g) {
     canopyTX(g); pad(g); trk(g); blocks(g); supports(g);
@@ -355,7 +347,7 @@ const F27 = (() => {
     okNets = pipes();
     try { const r = procLogic.pRing && procLogic.pRing['ТРК-1']; if (r) { r.position.set(sx(TRKc[0]), Y0 + 2.0, sz(TRKc[1])); r.scale.setScalar(0.55); } } catch (e) { console.warn('F27: кольцо насоса ТРК-1', e); }
   }
-  const api = { build, late, tick, ind, cardHTML, bindCard, VIEWS, oldG, pipeG, REC, levers, disp, sx, sz, Y0, TRKc, LN, speed: 1,
+  const api = { build, late, tick, ind, cardHTML, bindCard, VIEWS, pipeG, REC, levers, disp, sx, sz, Y0, TRKc, LN, speed: 1,
     scr: (u, v, h) => { const p = P3(u, v, h).project(camera), r = renderer.domElement.getBoundingClientRect(); return [r.left + (p.x + 1) / 2 * r.width, r.top + (1 - p.y) / 2 * r.height]; },   // экранная точка (для проверок)
     U: { VA: U_VA, VB: U_VB }, H57,
     get state() { return { okNets, Y0, run: flowing(), L: disp.L, B: disp.Bn, lev: levers.map(l => [l.vid, +l.k.toFixed(2)]) }; } };

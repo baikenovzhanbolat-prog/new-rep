@@ -37,8 +37,9 @@ const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 await page.addInitScript(() => { let s = 12345; Math.random = () => ((s = (s * 1103515245 + 12345) % 2147483648) / 2147483648); });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
+if (process.env.FP_THROTTLE) { const cdp = await page.context().newCDPSession(page); await cdp.send('Emulation.setCPUThrottlingRate', { rate: +process.env.FP_THROTTLE }); }   // проверка зависимости от скорости машины
 await page.goto('file://' + file + '?debug', { waitUntil: 'load', timeout: 240000 });
-await page.waitForFunction(() => window.__genplan && performance.now() > 16000, null, { timeout: 240000, polling: 500 });
+await page.waitForFunction(w => window.__genplan && performance.now() > w, +process.env.FP_WAIT || 16000, { timeout: 300000, polling: 500 });   // FP_WAIT — мс от начала загрузки
 
 const snap = () => page.evaluate(() => {
   const G = window.__genplan, { scene } = G;

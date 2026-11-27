@@ -11,16 +11,19 @@ function showModels(on) {
   if (curSel) select(curSel);
 }
 bMdl.onclick = null;   // v0.28: переключатель «Модели склада» убран — детальные модели показаны всегда
-/* v0.28: прежние условные модели и слои сравнения удалены из сцены (геометрия и материалы освобождаются, если больше нигде не используются) */
+/* v0.28: прежние условные модели и слои сравнения удалены из сцены (геометрия и материалы освобождаются, если больше нигде не используются).
+   v0.43: не строятся вовсе прежние 186, 166, вышки 800 (функции не вызывались) и путь 53 западнее упора; остальное (модели склада
+   под детальными РВС/РГС, лестницы и оборудование РВС до v0.21/v0.26, механизм 901, здание 196, вагоны, меши сетей до v0.12,
+   следы подземки, трубы «Л») — пока здесь. */
 function purgeOld() {
   const objs = [], arrs = [];
   const A = (o, k) => { try { if (o && Array.isArray(o[k])) arrs.push(o[k]); } catch (e) { /* модуль ещё не создан */ } };
   try { A(RVSD, 'old'); A(RVSD, 'ladOld'); A(RVSD, 'eqOld'); } catch (e) { }
   try { A(RGSD, 'old'); } catch (e) { }
-  try { A(W901, 'old'); A(W901, 't53w'); A(S196, 'old'); A(TCAR, 'old'); A(F24, 'oldTowers'); A(UGN, 'traces'); } catch (e) { }
+  try { A(W901, 'old'); A(S196, 'old'); A(TCAR, 'old'); A(UGN, 'traces'); } catch (e) { }
   try { if (typeof PNET !== 'undefined' && PNET) A(PNET, 'oldMeshes'); } catch (e) { }
   for (const a of arrs) { objs.push(...a); a.length = 0; }
-  try { objs.push(F25.oldG, F25.tkOld, F27.oldG, RACK_L); } catch (e) { }
+  try { objs.push(RACK_L); } catch (e) { }
   const dead = new Set();
   for (const o of objs) { if (!o || !o.isObject3D) continue; o.traverse(m => dead.add(m)); if (o.parent) o.parent.remove(o); }
   if (!dead.size) return;
