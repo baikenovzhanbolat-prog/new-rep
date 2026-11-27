@@ -38,7 +38,7 @@ function pumpAt(g, p) { /* v0.9: агрегат строится в модуле
 function cabAt(g, c) { const [x0, z0, x1, z1, h] = c; add(g, new THREE.BoxGeometry(Math.abs(x1 - x0), h, Math.abs(z1 - z0)), M(0xd9dde2), (x0 + x1) / 2, PH_F0 + h / 2, (z0 + z1) / 2); }
 /* Этап v0.9: данные по листу АК-041 — арматура по типам, фильтры, опоры ОП, воздушники; концы труб у насосов
    (опуски/стояки строятся вместе с агрегатом) и два пропуска оцифровки (участок всаса Н-2 у фильтра; начало линии z≈25,03) */
-const PHX_DATA = /*@inline data/22-lighting-ph200.PHX_DATA.json*/null;
+const PHX_DATA = /*@json data/22-lighting-ph200.PHX_DATA.json*/null;
 {
   for (const [i, end, x, z] of PHX_DATA.clips) { const p = PH.pipes[i]; if (!p) continue; if (end === 0) { p[0] = x; p[1] = z; } else { p[2] = x; p[3] = z; } }
   PH.pipes = PH.pipes.filter((p, i) => !PHX_DATA.drop.includes(i) && !p.dead).concat(PHX_DATA.extra); F29.tagExtra(PHX_DATA.extra); F29.fixValves(PHX_DATA); F34.patchPH(PH);   // v0.30: узлы по 200-ТХ-002

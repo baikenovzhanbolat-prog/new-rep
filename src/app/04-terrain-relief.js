@@ -6,7 +6,7 @@ ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground)
 const PARK = [[2913, 3225], [2913, 2700], [3007, 2606], [3780, 2606], [3780, 3018], [3284, 3018], [3284, 3225]]; // по ГП-003
 
 /* ---------- Рельеф по проектным отметкам листа ГП-003 (H0 = 297,30 → y = 0) + покрытия ---------- */
-const PH = /*@inline data/04-terrain-relief.PH.json*/null;
+const PH = /*@json data/04-terrain-relief.PH.json*/null;
 let TERR = null;
 const H0 = 297.30;
 const PH_F0 = 297.40 - 297.30, PH_F1 = 296.40 - 297.30, PH_PIPE_Y = 0.55;   // ±0.000 = 297,40; пол насосного зала −1,000; оси труб — как у наружных сетей
@@ -32,7 +32,7 @@ ground.position.y = -1.7;   // ниже всего рельефа и пола н
 for (let j = 0; j < TER.nz; j++) for (let i = 0; i < TER.nx; i++) if (inPolyT(TER.x0 + i * TER.st, TER.z0 + j * TER.st, PH.geo.outer)) TH[j * TER.nx + i] = Math.min(TH[j * TER.nx + i], 296.2 - 297.30);
 function inPolyT(x, z, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, zi] = poly[i], [xj, zj] = poly[j]; if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c; } return c; }
 const RELIEF17 = (() => {
-  const D = /*@inline data/04-terrain-relief.D.json*/null;
+  const D = /*@json data/04-terrain-relief.D.json*/null;
   const buf = t => Uint8Array.from(atob(t), c => c.charCodeAt(0)).buffer;
   // 1) основная сетка 2,5 м — изменённые узлы (см от 297,30)
   const ki = new Uint16Array(buf(D.main.i)), kv = new Int16Array(buf(D.main.v));

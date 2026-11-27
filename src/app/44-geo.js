@@ -11,7 +11,7 @@
    Отметки: система высот Балтийская; y сцены = отметка − 297,30.
    ===================================================================================== */
 const GEO = (() => {
-  const D = /*@inline data/44-geo.D.json*/null;
+  const D = /*@json data/44-geo.D.json*/null;
   const Z = D.geo.z, AM = D.geo.am, BM = D.geo.bm, H0g = 297.30;
   const fmt = (v, d = 2) => (+v).toFixed(d).replace('.', ',');
   const fmk = v => fmt(v, Math.abs(v * 100 - Math.round(v * 100)) > 1e-6 ? 3 : 2);
