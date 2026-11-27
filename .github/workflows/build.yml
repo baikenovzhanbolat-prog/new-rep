@@ -26,6 +26,8 @@ jobs:
           node tools/smoke.mjs dist/reference/genplan-3d-oskemen.html dist/genplan-3d-oskemen.html
       - name: Расчёт не зависит от отображения
         run: npm run test:sim
+      - name: Мобильный вид (iPhone, портрет и альбом)
+        run: npm run test:mobile
       - name: Отпечатки сцены и данных — Vite-сборка против эталонной
         run: npm run test:fp
       - name: Собранный HTML

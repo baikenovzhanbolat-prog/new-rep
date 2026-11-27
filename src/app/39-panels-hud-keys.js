@@ -1,5 +1,14 @@
 /* ---------- Панели: одновременно открыта одна (слои или список объектов) ---------- */
 const topBar = document.getElementById('top'), objP = document.getElementById('objp'), netP = document.getElementById('netp');
+/* v0.46: меню «☰» компактного режима. Выбор пункта закрывает меню ДО обработчика кнопки (фаза перехвата):
+   панели вычисляют свою позицию от нижнего края верхней панели. */
+{
+  const bMenu = document.getElementById('bMenu');
+  const setMenu = on => { document.body.classList.toggle('menuOpen', on); bMenu.setAttribute('aria-expanded', on ? 'true' : 'false'); };
+  bMenu.onclick = e => { e.stopPropagation(); setMenu(!document.body.classList.contains('menuOpen')); };
+  topBar.addEventListener('click', e => { const b = e.target.closest('.btn'); if (b && b !== bMenu) setMenu(false); }, true);
+  document.addEventListener('pointerdown', e => { if (document.body.classList.contains('menuOpen') && !topBar.contains(e.target)) setMenu(false); }, true);
+}
 function closePanels() {
   if (window.__RGSP) window.__RGSP.hidePanel();
   if (window.__DX) window.__DX.hidePanel();   // v0.21

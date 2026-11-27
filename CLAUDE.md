@@ -14,6 +14,7 @@
 - `node tools/fingerprint.mjs <файл.html> <имя>` и `--diff A.json B.json` — отпечаток сцены и данных (главная проверка рефакторинга)
 - `npm run fmt:data` — форматирование data/*.json
 - `npm run profile [имя]` — профиль запуска и отрисовки (dist/profile/), сравнивать «до/после»
+- `npm run test:mobile` — мобильный вид (панель, подписи, меню)
 - `npm run test:unit` — модульные тесты в Node (tests/: HYD35, procLogic); `npm run test:sim` — расчёт не зависит от отображения
 
 ## Правила
@@ -32,6 +33,9 @@
   через `SIMGEO`; новые нужны — добавлять туда. Чистые ядра (`47-hyd35.js`, `31-proc-logic.js`) — без THREE и DOM, покрыты tests/.
 - Карта теней обновляется по требованию (`renderer.shadowMap.autoUpdate = false`): после мгновенного изменения сцены,
   которое должно сразу отразиться в тени, — `VIS.shadowDirty()`.
+- Подписи (`.lb` в `#labels`) — через `lblSet(el, disp, transform, sx, sy, z)`, раскладка без наложений — `lblFlush()` в цикле;
+  в DOM напрямую `style.display`/`transform` подписей не писать (кеш `lblWrite`).
+- Компактный режим (телефон): `@media (max-width:700px), (max-height:500px)`; кнопки в `#top` попадают в меню «☰» автоматически.
 - `mergeStatic(group, pickables)` — только для объектов, чьи меши не меняются после постройки.
 - Детерминированный `Math.random` в инструментах — только mulberry32 (генератор на числах с плавающей точкой даёт повторы uuid).
 - Маркеры сборки описаны в README.md; в исходниках не должно появляться строк `@inline`/`@base64`/`@json`/`@concat` вне маркеров.

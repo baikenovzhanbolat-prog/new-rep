@@ -228,7 +228,8 @@ function procTick(t) {
     if (!l.grp.visible) { lblSet(l.el, 'none'); continue; }
     v.copy(l.pos).project(camera);
     if (v.z > 1) { lblSet(l.el, 'none'); continue; }
-    lblSet(l.el, '', `translate(${(v.x + 1) / 2 * innerWidth}px,${(1 - v.y) / 2 * innerHeight}px) translate(-50%,-100%)`);
+    const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
+    lblSet(l.el, '', `translate(${sx}px,${sy}px) translate(-50%,-100%)`, sx, sy, v.z);
   }
 }
 

@@ -26,7 +26,7 @@
   #foot{max-width:calc(100% - 290px);z-index:1}
   #foot .short{display:none}
   #netp,#objp,#info{z-index:5} #hud{z-index:2}
-  @media (max-width:700px){ #foot{max-width:none;right:10px} #foot .long{display:none} #foot .short{display:inline} }
+  @media (max-width:700px), (max-height:500px){ #foot{max-width:none;right:10px} #foot .long{display:none} #foot .short{display:inline} }
   @media (pointer:coarse){ #foot .kb{display:none} }
   /* Список объектов с поиском */
   #objp{position:fixed;left:10px;top:58px;width:330px;max-width:calc(100% - 20px);max-height:70vh;background:rgba(255,255,255,.97);border-radius:12px;
@@ -151,3 +151,17 @@
   #prEmg .jr{max-height:190px;overflow:auto} #prEmg .ev{font-size:11.5px;padding:3px 0;border-bottom:1px dotted #e1e7ec;line-height:1.3} #prEmg .ev b{font-family:ui-monospace,Consolas,monospace;color:#5b6b78;font-weight:500}
   #prEmg .ev.alarm{color:#9b1c1c} #prEmg .ev.ok{color:#14532d} #prEmg .ev.warn{color:#8a5a00} #prEmg .empty{font-size:11.5px;color:#6b7b88}
   .lb.emgf{background:#c81e1e;color:#fff;font-weight:700;animation:emgBl 1s steps(1) infinite}
+  /* v0.46: компактный режим — телефон в любой ориентации (узкий или низкий экран): кнопки режимов — в меню «☰» */
+  #bMenu{display:none}
+  @media (max-width:700px), (max-height:500px){
+    #top{left:6px;right:6px;top:6px;gap:5px;flex-wrap:nowrap}
+    #title{flex:1;min-width:0;font-size:12px;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #title br,#title small{display:none}
+    #bMenu{display:inline-block;flex:none}
+    #top .btn:not(#bMenu){display:none}
+    body.menuOpen #top{flex-wrap:wrap;background:rgba(20,32,44,.94);padding:6px;border-radius:12px;pointer-events:auto;max-height:calc(100% - 16px);overflow:auto;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+    body.menuOpen #title{flex-basis:calc(100% - 100px)}
+    body.menuOpen #top .btn:not(#bMenu){display:inline-block;flex:1 1 calc(33% - 6px);min-height:40px;font-size:14px}
+    body.menuOpen #bMenu{background:#1d4e7a;color:#fff;border-color:#1d4e7a}
+    #perf{display:none}
+  }

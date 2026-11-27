@@ -93,10 +93,36 @@ const MDL = {
 };
 
 const labelsEl = document.getElementById('labels');
-/* v0.45: подписи — запись в DOM только при изменении (иначе 100+ подписей пересчитывают стили каждый кадр) */
-function lblSet(el, disp, tf) {
+/* v0.45: подписи — запись в DOM только при изменении (иначе 100+ подписей пересчитывают стили каждый кадр).
+   v0.46: без наложений. Подписи кадра собираются (lblSet с экранными координатами) и раскладываются в lblFlush():
+   при пересечении остаётся более важная (тревога и пожар → уровни → номера объектов → арматура), при равной — ближняя
+   к камере; скрытая появляется, когда место освободится. Размеры кешируются по тексту подписи. */
+function lblWrite(el, disp, tf) {
   if (el._d !== disp) { el._d = disp; el.style.display = disp; }
   if (tf !== undefined && el._t !== tf) { el._t = tf; el.style.transform = tf; }
+}
+const LBLQ = [];
+function lblSet(el, disp, tf, sx, sy, z) {
+  if (disp === 'none' || sx === undefined) { lblWrite(el, disp, tf); return; }
+  LBLQ.push({ el, tf, sx, sy, z });
+}
+const lblRank = el => { const c = el.classList; return c.contains('emgf') || c.contains('al') || c.contains('f') ? 0 : c.contains('lv') ? 1 : c.contains('v') ? 3 : 2; };
+function lblFlush() {
+  if (!LBLQ.length) return;
+  const need = LBLQ.filter(q => q.el._w === undefined || q.el._txt !== q.el.textContent || q.el._cls !== q.el.className);
+  if (need.length) {   // замер новых и изменившихся подписей — одна раскладка страницы за кадр
+    for (const q of need) lblWrite(q.el, '', q.tf);
+    for (const q of need) { q.el._w = q.el.offsetWidth; q.el._h = q.el.offsetHeight; q.el._txt = q.el.textContent; q.el._cls = q.el.className; }
+  }
+  LBLQ.sort((a, b) => (lblRank(a.el) - lblRank(b.el)) || (a.z - b.z));
+  const placed = [], M = 2;
+  for (const q of LBLQ) {
+    const w = q.el._w, h = q.el._h, x0 = q.sx - w / 2 - M, x1 = q.sx + w / 2 + M, y0 = q.sy - h - M, y1 = q.sy + M;
+    let hit = false;
+    for (const r of placed) if (x0 < r[2] && r[0] < x1 && y0 < r[3] && r[1] < y1) { hit = true; break; }
+    if (hit) lblWrite(q.el, 'none'); else { placed.push([x0, y0, x1, y1]); lblWrite(q.el, '', q.tf); }
+  }
+  LBLQ.length = 0;
 }
 function setAnchor(o) {
   const src = o.gM && o.gM.visible ? o.gM : o.gS;

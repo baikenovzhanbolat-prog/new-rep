@@ -12,10 +12,13 @@ function loop() {
   if (!labelsEl.classList.contains('off') && !window.__walkOn) for (const o of OBJ) {
     v.copy(o.anchor).project(camera);
     if (v.z > 1 || !o.g.visible) { lblSet(o.el, 'none'); continue; }
-    lblSet(o.el, o.maf ? 'none' : '', `translate(${(v.x + 1) / 2 * innerWidth}px,${(1 - v.y) / 2 * innerHeight}px) translate(-50%,-100%)`);
+    if (o.maf) { lblSet(o.el, 'none'); continue; }
+    const sx = (v.x + 1) / 2 * innerWidth, sy = (1 - v.y) / 2 * innerHeight;
+    lblSet(o.el, '', `translate(${sx}px,${sy}px) translate(-50%,-100%)`, sx, sy, v.z);
   }
   if (window.__EMG) window.__EMG.tick(performance.now());
   procTick(performance.now()); RVSD.tick(); PIPED.tick(); UGN.tick(); ESTQ.tick(); PHX.tick(); VIS.tick(); F24.tick(performance.now()); F25.tick(performance.now()); F27.tick(performance.now()); UGHL.tick(performance.now());
+  lblFlush();   // v0.46: подписи без наложений
   if (cineOn || window.__walkOn) VIS.shadowDirty();   // кинорежим и обход ведут свою камеру — тень каждый кадр
   if (!(cineOn && CINE.render())) renderer.render(scene, camera);
   updateHud(); updatePerf();
