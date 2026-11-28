@@ -929,7 +929,7 @@ const RVSD = (() => {
   const isNear = (x, z, cx, cz, r) => Math.hypot(x - cx, z - cz) < r;
   function netEnds(k, cx, cz) {   // концы трасс сети k у резервуара (из ГП-005)
     const out = [];
-    for (const s of NETS[k] || []) for (const [x, z] of [[s[0], s[1]], [s[2], s[3]]]) if (isNear(x, z, cx, cz, 8.6)) out.push([x, z, Math.hypot(x - cx, z - cz)]);
+    for (const s of NETS[k] || []) for (const [x, z] of [[s[0], s[1]], [s[2], s[3]]]) if (isNear(x, z, cx, cz, 8.6)) out.push([x, z, Math.hypot(x - cx, z - cz), s[4]]);   // v0.55: [3] — подземный участок
     return out;
   }
   function buildTank(B, id, cx, cz, gy) {
@@ -970,11 +970,13 @@ const RVSD = (() => {
       const e = netEnds(k, cx, cz).sort((p, q) => p[2] - q[2])[0];
       const x = e ? e[0] - cx : (k === 'pv' ? 0.455 : -0.455);
       if (!e) info.flags.push(`подвод ${k} на ГП-005 не найден — стояк условный`);
-      const zr = -Math.sqrt(rr * rr - x * x), zs = zr - 0.9, rpts = e ? [V(x, yNet(x, zr), zr), V(x, yTop, zr)] : [V(x, yNet(x, zs), zs), V(x, yNet(x, zr), zr), V(x, yTop, zr)];   // v0.13: при наличии трассы ГП-005 — без горизонтального участка (трасса подходит к основанию стояка)
-      run(B, 'red', e && k === 'pv' ? [V(x, yNet(x, zr) + 3 * 0.0445, zr), V(x, yTop, zr)] : rpts, rad, 0.15, 10);   // v0.14: у В2 — отвод у основания строит PGEO
+      // v0.55 (P74): подвод подземный (610-ПТ) — стояк от глубины трассы UGN; ранее — от надземной трассы ГП-005 (рельеф + 0,6 м)
+      const ug = !!(e && e[3]), zr = -Math.sqrt(rr * rr - x * x), zs = zr - 0.9, yBot = ug ? hL(x, zr) - UGND_DEPTH[k] : yNet(x, zr);
+      const rpts = e ? [V(x, yBot, zr), V(x, yTop, zr)] : [V(x, yNet(x, zs), zs), V(x, yNet(x, zr), zr), V(x, yTop, zr)];   // v0.13: при наличии трассы ГП-005 — без горизонтального участка (трасса подходит к основанию стояка)
+      run(B, 'red', e && k === 'pv' && !ug ? [V(x, yNet(x, zr) + 3 * 0.0445, zr), V(x, yTop, zr)] : rpts, rad, 0.15, 10);   // v0.14: у В2 — отвод у основания строит PGEO
       PIPEREG.push({ gen: 'RVSD', local: true, cx, cz, gy, net: k, r: rad, od: rad * 2, eqEnd: k === 'pv' ? `РВС-${id}: кольцо орошения Ø89×4 (+11,830)` : `РВС-${id}: распределительный пенопровод Ø76×4 (+2,500) → ГПСС-600 × 2`, name: `${k === 'pv' ? 'Стояк В2 Ст.В2-2 Ø108×4 к кольцу орошения' : 'Ввод В10 Ø89×4 к распределительному пенопроводу'} РВС-${id} (109-ПТ-002)`, pts: rpts.map(v => v.toArray()), cf: { plan: 'P', elev: 'P', dn: 'P' } });
       for (let y = Y0 + 1.5; y < yTop - 0.4; y += 2.0) B.add('steel', boxBetween(V(x, y, -Math.sqrt(R_CL * R_CL - x * x)), V(x, y, zr), 0.03, 0.04));
-      if (e) flangePairY(B, x, yNet(x, zr) + (k === 'pv' ? 3 * 0.0445 + 0.035 : 0.2), zr, 0.0445, 'red');   // v0.14: фланцевое соединение у основания стояка (условно)
+      if (e) flangePairY(B, x, ug ? hL(x, zr) + 0.35 : yNet(x, zr) + (k === 'pv' ? 3 * 0.0445 + 0.035 : 0.2), zr, 0.0445, 'red');   // v0.14: фланцевое соединение у основания стояка (условно)
       else B.add('red', new THREE.BoxGeometry(0.12, 0.12, 0.12), T(x, yNet(x, zr), zr));   // фланцевое соединение у основания (условно)
     };
     riser('pv', R_RING, Y_RING, 0.054); riser('prp', R_DIST, Y_DIST, 0.0445);

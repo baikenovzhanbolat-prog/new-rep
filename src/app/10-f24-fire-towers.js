@@ -37,8 +37,11 @@ const F24 = (() => {
   }
 
   /* =========================== 1. ВЫШКИ ЛАФЕТНОГО СТВОЛА 800.1, 800.2 =========================== */
-  const TW = { A: 1.35, LEG: 1.27, H: 5.0, RL: 1.25, RISER: 0.30, FL: 6.60 };   // ПТ-002: 2700/2, базы на 80 внутрь, +5,000, 1250, 1650 от Б, 350 над ограждением
+  /* ось В2 по профилю 610-ПТ-004 (медиана, как UGND_DEPTH.pv в 20-piped.js; вышки строятся раньше — читаем те же данные) */
+  const UG_PV = (() => { const P = /*@json data/ug-pt-610.json*/null, g = P.ring.map(q => q.ground - q.invert).sort((x, y) => x - y), n = g.length; return (n % 2 ? g[(n - 1) / 2] : (g[n / 2 - 1] + g[n / 2]) / 2) - P.od.pv / 2; })();
+  const TW = { UG_PV, A: 1.35, LEG: 1.27, H: 5.0, RL: 1.25, RISER: 0.30, FL: 6.60 };   // ПТ-002: 2700/2, базы на 80 внутрь, +5,000, 1250, 1650 от Б, 350 над ограждением
   const towers = {};   // id → { mon: {yaw, pitch}, yawG, pitchG, tip, aim, water, ... }
+  const towerReg = [];   // записи реестра труб вышек: PIPEREG определён позже вышек — вносятся в late()
   function tower(g, px, py, id) {
     const [cx, cz] = P(px, py), { A, LEG, H, RL } = TW;
     const bp = GK.builder(), bs = GK.builder(), bf = GK.builder();   // окраска; оцинковка/сталь; мелкие детали (LOD)
@@ -98,7 +101,10 @@ const F24 = (() => {
     const rx = cx, rz = cz + TW.RISER, rr = 0.0445;
     const pM = new THREE.MeshStandardMaterial({ color: 0x1e4dd8, roughness: 0.45, metalness: 0.3 });   // цвет В2 (ГП-005); в режиме ГОСТ 14202 — красный
     const bpipe = GK.builder();
-    bpipe.cyl(V(rx, -0.4, rz), V(rx, TW.FL - 0.05, rz), rr, 0, 16);
+    const yUG = -TW.UG_PV;   // v0.55 (P74): стояк — от подземной сети В2 (610-ПТ); группа вышки посажена на рельеф
+    bpipe.cyl(V(rx, yUG, rz), V(rx, TW.FL - 0.05, rz), rr, 0, 16);
+    const gy0 = hAt(cx, cz);   // посадка группы на рельеф (13-obj-registry: по центру габарита ≈ центру вышки)
+    towerReg.push({ gen: 'F24', net: 'pv', r: rr, od: 0.089, name: `Стояк В2 Ø89×2,8 вышки ${id} (800-ПТ-002; от подземной сети — 610-ПТ)`, src: 'ПТ', pts: [[rx, gy0 + yUG, rz], [rx, gy0 + TW.FL, rz]], cf: { plan: 'V', elev: 'P', dn: 'V' }, eqEnd: `Монитор вышки ${id}: фланец` });
     bs.cyl(V(rx, TW.FL - 0.05, rz), V(rx, TW.FL - 0.02, rz), 0.1, C.red, 20); bs.cyl(V(rx, TW.FL - 0.02, rz), V(rx, TW.FL, rz), 0.1, C.red, 20);
     for (const y of [2.55, H - 0.1]) { bp.bar(V(cx - LEG, y, rz), V(cx + LEG, y, rz), 0.05, 0.08, C.str); bf.ring(V(rx, y + 0.06, rz), UP, rr + 0.012, 0.006, C.galv, 14); }
     bs.cyl(V(rx, H, rz), V(rx, H + 0.06, rz), rr + 0.03, C.str, 16);   // гильза в настиле
@@ -251,7 +257,7 @@ const F24 = (() => {
     // v0.54: подземный ввод Ø108×4 (200-ПТ-002: низ −2,820) от конца трассы В10 ГП-005 у северной стены (x −61,55; z 19,69) — опуск и подвод условно
     {
       const yIn = PH_F0 - 2.82 + R108, eN = [-61.55, 19.69];
-      const path = [V(eN[0], -0.163, eN[1]), V(eN[0], yIn, eN[1]), V(B10.xIn, yIn, eN[1]), V(B10.xIn, yIn, B10.zN), pt(B10.xIn, B10.zN, PH_F1 - 0.05), pt(B10.xIn, B10.zN)];
+      const path = [V(eN[0], hAt(eN[0], eN[1]) - UGND_DEPTH.prp, eN[1]), V(eN[0], yIn, eN[1]), V(B10.xIn, yIn, eN[1]), V(B10.xIn, yIn, B10.zN), pt(B10.xIn, B10.zN, PH_F1 - 0.05), pt(B10.xIn, B10.zN)];
       for (let i = 1; i < path.length - 1; i++) bpi.cyl(path[i - 1], path[i], R108, 0, 14);
       reg24(path, R108, 'Ввод В10 Ø108×4 в насосный цех 200 (200-ПТ-002; подземная часть — условно)', 'Пенопровод цеха 200: тройник на +1,800');
     }
@@ -379,7 +385,8 @@ const F24 = (() => {
     const zc = P(0, 3103.5)[1], zSup = zc + 2.70, zSt = zSup + 2.5, zRs = zSt + 0.5;   // ось опоры (ГП-003), стойка 2500, стояк 500 (116-ПТ-002-0)
     RGS_PX.forEach((px, i) => {
       const x = P(px, 0)[0], y0 = hAt(x, zc), yT = y0 + 5.0, R = 0.038, yS = hAt(x, zSt), yR = hAt(x, zRs);
-      bpi.cyl(V(x, yR - 0.6, zRs), V(x, yT, zRs), R, 0, 14);                 // стояк Ст.В10-N Ø76×4 (от коллектора −1,970)
+      const yU = yR - UGND_DEPTH.prp;   // v0.55 (P74): коллектор подземный (116-ПТ-002: −1,970; в модели — глубина сети В10 по 610-ПТ)
+      bpi.cyl(V(x, yU, zRs), V(x, yT, zRs), R, 0, 14);                         // стояк Ст.В10-N Ø76×4
       bpi.cyl(V(x, yT - R, zRs), V(x, yT + R, zRs), R, 0, 12);               // отвод 90°
       bpi.cyl(V(x, yT, zRs), V(x, yT, zSt - 1.9), R, 0, 14);                  // по консоли к ГПС
       bs.box(0.45, 0.25, 0.45, x, yS + 0.0, zSt, C.conc);                     // фундамент стойки (условно)
@@ -388,7 +395,7 @@ const F24 = (() => {
       bs.bar(V(x, yT - 1.75, zSt), V(x, yT - 0.12, zSt - 1.2), 0.06, 0.06, C.str);              // подкос
       for (const zz of [zSt - 0.2, zSt - 1.6]) bf.ring(V(x, yT, zz), new THREE.Vector3(0, 0, 1), R + 0.007, 0.006, C.galv, 14);   // хомуты К-1 (200 / 1400)
       gps(bg, V(x, yT, zSt - 2.07), new THREE.Vector3(0, 0, -1));             // ГПС-600, выход пены — к резервуару (на север)
-      reg24([V(x, hAt(x, zRs) + 0.6, zRs), V(x, yT, zRs), V(x, yT, zSt - 1.9)], R, `Стояк Ст.В10-${i + 1} Ø76×4 к ГПС-600 над РГС ${RGS_ID[i]}`, `ГПС-600 над РГС ${RGS_ID[i]}: вход`);
+      reg24([V(x, yU, zRs), V(x, yT, zRs), V(x, yT, zSt - 1.9)], R, `Стояк Ст.В10-${i + 1} Ø76×4 к ГПС-600 над РГС ${RGS_ID[i]}`, `ГПС-600 над РГС ${RGS_ID[i]}: вход`);
       bf.cyl(V(x, yR - 0.02, zRs), V(x, yR + 0.04, zRs), R + 0.03, C.conc, 12);
     });
     const oP = { id: 'В10 (РГС)', net: 1, f24: 'b10', name: 'Стояки В10 Ø76×4 к ГПС-600 над РГС (Ст.В10-1…4)', note: 'От подземного коллектора −1,970 (Ø133×5 → 108 → 89 → 76×4, шаг 4252) — 116.1-116.4-ПТ-002-0. Стояк в 500 мм от стойки, стойка — в 2500 от оси опоры резервуара; на консоли — хомуты К-1. Совпадает с трассой В10 ГП-005 (z 12,25) с точностью 0,02 м.' };
@@ -513,7 +520,7 @@ const F24 = (() => {
     rgs: () => { const x = P(3056.5, 0)[0], y = hAt(x, 8); flyTo([x + 7, y + 9, 21], [x - 1, y + 3, 9], 0.9); }
   };
   function craneCmd(k, v) { if (k === 'hook') { if (!crane.pend) crane.thy = v === 'up' ? CR.yHook : hookLow(); } else craneMove(k === 'bridge' ? 'tz' : 'thx', v); }
-  function late() { const n0 = lod.length; buildHall(); buildRGS(); build186(); FAST_LOD.push(...lod.slice(n0)); }
+  function late() { PIPEREG.push(...towerReg); const n0 = lod.length; buildHall(); buildRGS(); build186(); FAST_LOD.push(...lod.slice(n0)); }
   /* контур для проверки связности сетей (PNET): прежний габарит вышки ±1,8 м — чтобы классификация концов сетей
      у вышек (в т. ч. К1) осталась как в v0.23; привязка концов труб к сооружениям по габариту — эвристика PNET */
   const fp = (px, py) => { const [x, z] = P(px, py); return new THREE.Box3(new THREE.Vector3(x - 1.8, -1, z - 1.8), new THREE.Vector3(x + 1.8, 13, z + 1.8)); };
